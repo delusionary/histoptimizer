@@ -17,9 +17,9 @@ def numpy_partition(items, buckets):
     padded_items.extend(items)
     items = padded_items
     n = len(items) - 1
-    min_cost = numpy.zeros((n + 1, buckets + 1), dtype=numpy.float32)       # pd.DataFrame(columns=range(0, buckets + 1))
-    divider_location = numpy.zeros((n + 1, buckets + 1), dtype=numpy.int32)       # d = pd.DataFrame(columns=range(0, buckets + 1))
-    prefix_sum = numpy.zeros((n + 1))                    # p = [None] * (n + 1)  # prefix sums array
+    min_cost = numpy.zeros((n + 1, buckets + 1), dtype=numpy.float32)
+    divider_location = numpy.zeros((n + 1, buckets + 1), dtype=numpy.int32)
+    prefix_sum = numpy.zeros((n + 1))
 
     # Cache cumulative sums
     for item in range(1, n + 1):
@@ -32,10 +32,9 @@ def numpy_partition(items, buckets):
         # evaluate main recurrence
         for bucket in range(2, buckets + 1):
             min_cost[item, bucket] = numpy.finfo(dtype=numpy.float32).max
-            for previous_item in range(1, item):
+            for previous_item in range(bucket - 1, item):
                 cost = max(min_cost[previous_item, bucket - 1], prefix_sum[item] - prefix_sum[previous_item])
                 if min_cost[item, bucket] > cost:
                     min_cost[item, bucket] = cost
                     divider_location[item, bucket] = previous_item
-    print('hi')
     return reconstruct_partition(divider_location, n, buckets)
