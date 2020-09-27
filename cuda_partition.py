@@ -30,13 +30,11 @@ def cuda_reconstruct(divider_location, num_items, num_buckets, partitions):
 
 @cuda.jit
 def init_items_kernel(min_cost, prefix_sum):
-    # Thread id in a 1D block
-    tx = cuda.threadIdx.x
+    thread_idx = cuda.threadIdx.x
     # Block id in a 1D grid
-    ty = cuda.blockIdx.x
-    # Block width, i.e. number of threads per block
-    bw = cuda.blockDim.x
-    item = tx + ty * bw
+    block_idx = cuda.blockIdx.x
+    block_size = cuda.blockDim.x
+    item = thread_idx + (block_idx * block_size)
     if item < prefix_sum.size:  # Check array boundaries
         min_cost[item, 1] = prefix_sum[item]
 
@@ -72,10 +70,16 @@ def cuda_partition_kernel(min_cost, divider_location, prefix_sum):
         cuda.syncthreads()
 
 
-def cuda_partition(items, num_buckets):
-    items = [0] + items
-    prefix_sum = numpy.zeros((len(items)))
+def cuda_partition(items, num_buckets, debug_info=None):
+    padded_items = [0]
+    padded_items.extend(items)
+    items = padded_items
+    prefix_sum = numpy.zeros((len(items)), dtype=numpy.float32)
     # Pre-calculate prefix sums for items in the array.
+    for item in range(1, len(items)):
+        prefix_sum[item] = prefix_sum[item - 1] + items[item]
+
+    # Cache cumulative sums
     for item in range(1, len(items)):
         prefix_sum[item] = prefix_sum[item - 1] + items[item]
 
@@ -99,6 +103,11 @@ def cuda_partition(items, num_buckets):
     partitions = reconstruct_partition(divider_location, len(items) - 1, num_buckets)
     #partitions = partitions_gpu.copy_to_host()
 
+    if debug_info is not None:
+        debug_info['prefix_sum'] = prefix_sum
+        debug_info['items'] = items
+        debug_info['min_cost'] = min_cost
+        debug_info['divider_location'] = divider_location
     return partitions
 
 # start = timer()

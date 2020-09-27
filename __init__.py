@@ -11,11 +11,15 @@ from cuda_partition import cuda_partition
 from numpy_partition import numpy_partition
 
 
+def clean_and_sort(data, sort_key, ascending, sizes, silent_discard=True):
+    return data[(data[sizes].isna()==False) & (data[sort_key].isna()==False)]\
+        .sort_values(sort_key, ascending=ascending).reset_index()
+
 def get_partitioner(name=None):
-    '''
+    """
     Return the named partition implementation. If no implementation name is provided, select
     CUDA if a GPU is available, something else otherwise.
-    '''
+    """
     if name is None:
         return numpy_partition
 
@@ -27,7 +31,7 @@ def get_partitioner(name=None):
 
 def histoptimize(data, key, size, partitions, ascending, print_all, column_name, timing, implementation):
     start = timer()
-    data = data.sort_values(key, ascending=ascending).reset_index()
+    data = clean_and_sort(data, key, ascending, size)
     items = data[size].astype('float64')
     dividers = get_partitioner(implementation)(items, partitions)
     current_partition = 0
@@ -59,7 +63,7 @@ def histoptimize(data, key, size, partitions, ascending, print_all, column_name,
 @click.option('-c', '--column-name', type=str, default=None,
               help='Partition column header value. Defaults to partion_n')
 @click.option('-t', '--timing', type=bool, default=False)
-@click.option('-i', '--implementation', type=str, default='default')
+@click.option('-i', '--implementation', type=str, default=None)
 @click.option('-o', '--output', type=click.File('w'))
 def histoptimizer_cli(file, name, key, size, partitions, number, ascending,
                       print_all, column_name, timing, implementation, output):
@@ -77,7 +81,6 @@ def histoptimizer_cli(file, name, key, size, partitions, number, ascending,
     else:
         data = pandas.read_csv(file)
     original_length = len(data.index)
-    data = data[(data[size].isna()==False) & (data[key].isna()==False)]
     new_length = len(data.index)
     if number:
         data = data.truncate(after=number-1)
@@ -89,9 +92,19 @@ def histoptimizer_cli(file, name, key, size, partitions, number, ascending,
     result.to_csv(output)
 
 
+def rando_debug():
+    data = pandas.read_json('county_narrow.json')
+    data = data.truncate(after=30)
+    data = clean_and_sort(data, 'pct_trump16', True, 'total_population')
+    #result = histoptimize(data, 'pct_trump16', 'total_population', 6, True, False, 'bucket', True)
+
+    cuda_debug_info = {}
+    numpy_debug_info = {}
+    partition_cuda = cuda_partition(data['total_population'], 6, cuda_debug_info)
+    partition_numpy = numpy_partition(data['total_population'], 6, numpy_debug_info)
+    print('hi')
+
+
 if __name__ == '__main__':
     histoptimizer_cli()
-    #partitions = cuda_partition([1,2,3,4,5,6,7,8,9,10], 6)
-    #data = pandas.read_json('county_narrow.json')
-    #data = data.truncate(after=9)
-    #result = histoptimize(data, 'pct_trump16', 'total_population', 6, True, False, 'bucket', True)
+

@@ -12,14 +12,14 @@ def reconstruct_partition(divider_location, num_items, num_buckets):
     return partitions
 
 
-def numpy_partition(items, buckets):
+def numpy_partition(items, buckets, debug_info=None):
     padded_items = [0]
     padded_items.extend(items)
     items = padded_items
     n = len(items) - 1
     min_cost = numpy.zeros((n + 1, buckets + 1), dtype=numpy.float32)
     divider_location = numpy.zeros((n + 1, buckets + 1), dtype=numpy.int32)
-    prefix_sum = numpy.zeros((n + 1))
+    prefix_sum = numpy.zeros((n + 1), dtype=numpy.float32)
 
     # Cache cumulative sums
     for item in range(1, n + 1):
@@ -37,4 +37,9 @@ def numpy_partition(items, buckets):
                 if min_cost[item, bucket] > cost:
                     min_cost[item, bucket] = cost
                     divider_location[item, bucket] = previous_item
+    if debug_info is not None:
+        debug_info['items'] = items
+        debug_info['prefix_sum'] = prefix_sum
+        debug_info['min_cost'] = min_cost
+        debug_info['divider_location'] = divider_location
     return reconstruct_partition(divider_location, n, buckets)
