@@ -1,14 +1,10 @@
-import sys
-from typing import List
-
 import click
 import pandas
 import numpy
 from timeit import default_timer as timer
 
-from pandas_partition import pandas_partition
-from cuda_partition import cuda_partition
-from numpy_partition import numpy_partition
+from histoptimizer.cuda_partition import cuda_partition
+from histoptimizer.numpy_partition import numpy_partition
 
 
 def clean_and_sort(data, sort_key, ascending, sizes, silent_discard=True):
@@ -93,7 +89,7 @@ def histoptimizer_cli(file, name, key, size, partitions, number, ascending,
 
 
 def rando_debug():
-    data = pandas.read_json('county_narrow.json')
+    data = pandas.read_json('../county_narrow.json')
     data = data.truncate(after=30)
     data = clean_and_sort(data, 'pct_trump16', True, 'total_population')
     #result = histoptimize(data, 'pct_trump16', 'total_population', 6, True, False, 'bucket', True)
