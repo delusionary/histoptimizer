@@ -6,6 +6,12 @@ import numpy as np
 # import os; os.environ['NUMBA_ENABLE_CUDASIM'] = '1'
 
 
+# Instead of doing one thread per bucket, Do one thread at a time and divvy up the work for the items in each
+# thread.
+
+#
+
+
 def reconstruct_partition(divider_location, num_items, num_buckets):
     if num_buckets < 2:
         return np.array(0)

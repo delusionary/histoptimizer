@@ -1,22 +1,6 @@
 import os
 from setuptools import setup
 
-setup(
-    name='histoptimizer',
-    version='0.1',
-    py_modules=['histoptimizer'],
-    install_requires=[
-        'Click',
-    ],
-    entry_points='''
-        [console_scripts]
-        histoptimizer=histoptimizer:histoptimizer_cli
-    ''',
-)
-
-
-import os
-from setuptools import setup
 
 # Utility function to read the README file.
 # Used for the long_description.  It's nice, because now 1) we have a top level
@@ -35,7 +19,7 @@ setup(
     keywords = "histogram partition",
     url="https://github.com/delusionary/histoptimizer",
     packages=['histoptimizer', 'tests'],
-    long_description=read('README'),
+    long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Topic :: Utilities",
@@ -43,9 +27,11 @@ setup(
     ],
     install_requires=[
         'Click',
+        'numpy',
+        'pandas'
     ],
     entry_points='''
         [console_scripts]
-        histoptimizer=histoptimizer:histoptimizer_cli
+        histoptimizer=histoptimizer.cli:cli
     ''',
 )

@@ -25,19 +25,18 @@ def build_matrices(buckets, prefix_sum):
         min_cost[item, 1] = (prefix_sum[item] - mean)**2
     for bucket in range(1, buckets + 1):
         min_cost[1, bucket] = (prefix_sum[1] - mean)**2
+    prev_divider_lowest_cost_location = np.full((buckets + 1,), 1, dtype=np.int)
     for item in range(2, len(prefix_sum)):
         # evaluate main recurrence
         for bucket in range(2, buckets + 1):
             min_cost_temp = np.finfo(dtype=np.float32).max
             divider_location_temp = 0
-            for previous_item in range(bucket - 1, item):
-                cost = min_cost[previous_item, bucket - 1] + ((prefix_sum[item] - prefix_sum[previous_item]) - mean)**2
-                if min_cost_temp > cost:
-                    min_cost_temp = cost
-                    divider_location_temp = previous_item
+            if min_cost[item - 1, bucket - 1] < prev_divider_lowest_cost_location[bucket]:
+                prev_divider_lowest_cost_location[bucket] = item - 1
+            min_cost_temp = min_cost[prev_divider_lowest_cost_location[bucket], bucket - 1] + ((prefix_sum[item] - prefix_sum[prev_divider_lowest_cost_location[bucket]]) - mean)**2
             min_cost[item, bucket] = min_cost_temp
+            divider_location_temp = prev_divider_lowest_cost_location[bucket]
             divider_location[item, bucket] = divider_location_temp
-
     return min_cost, divider_location
 
 
