@@ -47,6 +47,8 @@ def run_all_partitioners(items, num_buckets, exclude=[], include=None):
             f'buckets': num_buckets,
             # f'{partitioner_type}_mean_deviation_sum': sum(map(lambda a: abs(a - mean_value), partitions))
         })
+    if results['naive_std_dev'] != results['recursive_quiet_std_dev']:
+        pass
 
     return results
 
@@ -87,7 +89,17 @@ def regress(items, max_buckets):
 
 
 def partitioner_run():
+    # interesting:
+    #  [5, 1, 6, 8, 5] in 3 buckets, [3, 4] better than [2, 4]
+    #  [10, 8, 3, 5, 2] in 4 buckets [1, 2, 3] better than [1, 2, 4]
+    #  [6, 2, 1, 8, 8] in 3 buckets [2, 4] better than [1, 4]
+    #  [5, 5, 6, 9, 7] in 3 buckets [2, 4] better than [2, 3]
+    #  [7, 2, 7, 8, 5] in 4 buckets [1, 3, 4] better than [1, 3, 3]
+    #  [5, 7, 2, 2, 7] in 4 buckets [1, 2, 4] better than [1, 3, 4]
+    #  [3, 3, 5, 3, 4] in 4 buckets [2, 3, 4] better than [1, 3, 4]
     # items = [7, 41, 97, 53, 67, 24]
+    # Fixed, then
+    # [9, 4, 7, 7, 1] in 3 buckets [1, 3] is better than [2, 3]
     # num_buckets = 3
     # Produces different answers from cuda, naive, and numpy_min_max_sum
     #
@@ -101,20 +113,21 @@ def partitioner_run():
     # Run the CUDA partitioner to compile the kernels.
     m = partitioner('cuda')([1, 4, 6, 9], 3)
     results = []
-    num_iterations = 100
+    num_iterations = 10
     num_items = 5
     min_buckets = 3
-    max_buckets = 3
+    max_buckets = 4
     min_rand = 1
     max_rand = 10
 
     exclude = [] # ('slow', 'numpy_min_max_sum')
-    include = ['naive', 'recursive']
-    for iteration in range(0, num_iterations+1):
+    include = ['naive', 'recursive_quiet']
+    for iteration in range(1, num_iterations+1):
         # Get a list of 10 random integers from ~ 0.0000005 to 100
         # items = (max_rand - min_rand) * np.random.random_sample((num_items,)) + min_rand
         items = np.random.randint(min_rand, max_rand + 1, size=num_items)
-        # For each number of dividers 1-6:
+        #items = [3, 3, 5, 3, 4]
+        # For each number of buckets
         for num_buckets in range(min_buckets, max_buckets + 1):
             results.append(run_all_partitioners(items, num_buckets, include=include, exclude=exclude))
             # new_result = regress(items, num_buckets)
@@ -122,7 +135,8 @@ def partitioner_run():
         print(f'Completed iteration {iteration}')
 
     r = pd.DataFrame(results)
-    pass
+    interesting_results = r[r.naive_std_dev != r.recursive_quiet_std_dev]
+    assert interesting_results.empty
 
 
 def holding(r):

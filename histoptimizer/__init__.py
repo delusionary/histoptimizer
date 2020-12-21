@@ -7,6 +7,7 @@ import histoptimizer.numpy_min_max_sum_partition
 import histoptimizer.numpy_2
 import histoptimizer.naive_partition
 import histoptimizer.recursive
+import histoptimizer.recursive_quiet
 
 partitioners = {
     'cuda': histoptimizer.cuda_partition.cuda_partition,
@@ -15,7 +16,8 @@ partitioners = {
     'naive': histoptimizer.naive_partition.naive_partition,
     'slow': histoptimizer.naive_partition.slow_naive_partition,
     'numpy_2': histoptimizer.numpy_2.numpy_partition,
-    'recursive': histoptimizer.recursive.partition
+    'recursive': histoptimizer.recursive.partition,
+    'recursive_quiet': histoptimizer.recursive_quiet.partition
 }
 
 
