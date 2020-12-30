@@ -1,25 +1,12 @@
 import pandas as pd
 import numpy as np
 
-import histoptimizer.numpy_partition
-import histoptimizer.cuda_partition
-import histoptimizer.numpy_min_max_sum_partition
-import histoptimizer.numpy_2
-import histoptimizer.naive_partition
-import histoptimizer.recursive
-import histoptimizer.recursive_quiet
+def get_partitioner_dict(*modules):
 
-partitioners = {
-    'cuda': histoptimizer.cuda_partition.cuda_partition,
-    'numpy': histoptimizer.numpy_partition.numpy_partition,
-    'numpy_min_max_sum': histoptimizer.numpy_min_max_sum_partition.numpy_min_max_sum_partition,
-    'naive': histoptimizer.naive_partition.naive_partition,
-    'slow': histoptimizer.naive_partition.slow_naive_partition,
-    'numpy_2': histoptimizer.numpy_2.numpy_partition,
-    'recursive': histoptimizer.recursive.partition,
-    'recursive_quiet': histoptimizer.recursive_quiet.partition
-}
-
+    partitioners = {}
+    for m in modules:
+        partitioners[m.name] = m.partition
+    return partitioners
 
 def partitioner(implementation='numpy'):
     return partitioners[implementation]

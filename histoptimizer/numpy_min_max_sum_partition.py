@@ -1,5 +1,5 @@
 import numpy
-from histoptimizer.numpy_partition import reconstruct_partition
+from histoptimizer.dynamic import reconstruct_partition
 
 
 # noinspection DuplicatedCode

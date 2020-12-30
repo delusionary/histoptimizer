@@ -1,5 +1,7 @@
 import numpy as np
 
+name = 'dynamic'
+
 
 def reconstruct_partition(divider_location, num_items, num_buckets):
     if num_buckets < 2:
@@ -42,7 +44,7 @@ def build_matrices(buckets, prefix_sum):
 
 
 # noinspection DuplicatedCode
-def numpy_partition(items, buckets, debug_info=None):
+def partition(items, buckets, debug_info=None):
     num_items = len(items)
     padded_items = [0]
     padded_items.extend(items)

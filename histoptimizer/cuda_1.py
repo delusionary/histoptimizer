@@ -3,6 +3,8 @@ import math
 from numba import cuda
 import numpy as np
 
+name = 'cuda_1'
+
 # import os; os.environ['NUMBA_ENABLE_CUDASIM'] = '1'
 
 
@@ -74,7 +76,7 @@ def cuda_partition_kernel(min_cost, divider_location, prefix_sum, mean):
         cuda.syncthreads()
 
 
-def cuda_partition(items, num_buckets, debug_info=None):
+def partition(items, num_buckets, debug_info=None):
     padded_items = [0]
     padded_items.extend(items)
     items = padded_items

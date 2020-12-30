@@ -5,6 +5,28 @@ import sys
 
 from histoptimizer import histoptimize
 
+import histoptimizer.recursive
+import histoptimizer.recursive_cache
+import histoptimizer.recursive_verbose
+import histoptimizer.cuda_1
+import histoptimizer.cuda_2
+import histoptimizer.cuda_3
+import histoptimizer.dynamic
+import histoptimizer.enumerate
+import histoptimizer.pandas
+
+partitioner = histoptimizer.get_partitioner_dict(
+    histoptimizer.pandas,
+    histoptimizer.enumerate,
+    histoptimizer.dynamic,
+    histoptimizer.cuda_1,
+    histoptimizer.cuda_2,
+    histoptimizer.cuda_3,
+    histoptimizer.recursive_cache,
+    histoptimizer.recursive_verbose,
+    histoptimizer.recursive
+)
+
 def clean_and_sort(data, sort_key, ascending, sizes, max_rows, silent_discard=False):
     """
     Performs some optional house-keeping on input files.

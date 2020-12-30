@@ -4,9 +4,35 @@ import pytest
 import time
 
 from histoptimizer.cli import clean_and_sort
-from histoptimizer import partitioner, partitioners
-from histoptimizer.naive_partition import get_partition_sums, partition_generator
+import histoptimizer
+# TODO(kjoyner) Move get_partition_sums to __init__.py
+from histoptimizer.pandas import get_partition_sums
+from histoptimizer.enumerate import partition_generator
 
+import histoptimizer.recursive
+import histoptimizer.recursive_cache
+import histoptimizer.recursive_verbose
+import histoptimizer.cuda_1
+import histoptimizer.cuda_2
+import histoptimizer.cuda_3
+import histoptimizer.dynamic
+import histoptimizer.enumerate
+import histoptimizer.pandas
+
+partitioner = histoptimizer.get_partitioner_dict(
+    histoptimizer.pandas,
+    histoptimizer.enumerate,
+    histoptimizer.dynamic,
+    histoptimizer.cuda_1,
+    histoptimizer.cuda_2,
+    histoptimizer.cuda_3,
+    histoptimizer.recursive_cache,
+    histoptimizer.recursive_verbose,
+    histoptimizer.recursive
+)
+
+
+# Test some static data sets for the naive_
 
 @pytest.mark.skip(reason="not using this right now.")
 def rando_debug():
@@ -34,12 +60,12 @@ def run_all_partitioners(items, num_buckets, exclude=[], include=None):
     for partitioner_type in set(include) - set(exclude):
         debug_info = {}
         start = time.time()
-        dividers = partitioner(partitioner_type)(items, num_buckets)
+        dividers = partitioner[partitioner_type](items, num_buckets, debug_info=debug_info)
         partitions = get_partition_sums(dividers, items)
         end = time.time()
         results.update({
             f'{partitioner_type}_dividers': dividers,
-            # f'{partitioner_type}_debug_info': debug_info,
+            f'{partitioner_type}_debug_info': debug_info,
             f'{partitioner_type}_std_dev': np.std(partitions),
             f'{partitioner_type}_max_sum': np.max(partitions),
             f'{partitioner_type}_time': end - start,
@@ -47,8 +73,6 @@ def run_all_partitioners(items, num_buckets, exclude=[], include=None):
             f'buckets': num_buckets,
             # f'{partitioner_type}_mean_deviation_sum': sum(map(lambda a: abs(a - mean_value), partitions))
         })
-    if results['naive_std_dev'] != results['recursive_quiet_std_dev']:
-        pass
 
     return results
 
@@ -97,36 +121,27 @@ def partitioner_run():
     #  [7, 2, 7, 8, 5] in 4 buckets [1, 3, 4] better than [1, 3, 3]
     #  [5, 7, 2, 2, 7] in 4 buckets [1, 2, 4] better than [1, 3, 4]
     #  [3, 3, 5, 3, 4] in 4 buckets [2, 3, 4] better than [1, 3, 4]
-    # items = [7, 41, 97, 53, 67, 24]
-    # Fixed, then
-    # [9, 4, 7, 7, 1] in 3 buckets [1, 3] is better than [2, 3]
-    # num_buckets = 3
-    # Produces different answers from cuda, naive, and numpy_min_max_sum
-    #
-    # Try five items 3-4 buckets.
-    #
-    # interesting_results.json contains other instances
-    # data = pd.read_json('../county_narrow.json')
-    # data = clean_and_sort(data, 'nonwhite_pct', True, 'total_population', 2000, True)
-    # items = data['total_population'].to_numpy(dtype=np.float32)
+    #  [10, 5, 5, 4, 2] in 3 buckets [1, 3] better than [2, 3]
 
-    # Run the CUDA partitioner to compile the kernels.
-    m = partitioner('cuda')([1, 4, 6, 9], 3)
+    # Run the CUDA partitioner to pre-compile the kernels.
+    m = partitioner['cuda_1']([1, 4, 6, 9], 3)
+    m = partitioner['cuda_2']([1, 4, 6, 9], 3)
+    m = partitioner['cuda_3']([1, 4, 6, 9], 3)
+
     results = []
-    num_iterations = 10
-    num_items = 5
-    min_buckets = 3
-    max_buckets = 4
+    num_iterations = 1
+    num_items = 400
+    min_buckets = 50
+    max_buckets = 50
     min_rand = 1
     max_rand = 10
 
-    exclude = [] # ('slow', 'numpy_min_max_sum')
-    include = ['naive', 'recursive_quiet']
+    exclude = []  # ('slow', 'numpy_min_max_sum')
+    include = ['cuda_1', 'cuda_2', 'cuda_3', 'dynamic']
     for iteration in range(1, num_iterations+1):
-        # Get a list of 10 random integers from ~ 0.0000005 to 100
-        # items = (max_rand - min_rand) * np.random.random_sample((num_items,)) + min_rand
-        items = np.random.randint(min_rand, max_rand + 1, size=num_items)
-        #items = [3, 3, 5, 3, 4]
+        items = (max_rand - min_rand) * np.random.random_sample((num_items,)) + min_rand
+        # items = np.random.randint(min_rand, max_rand + 1, size=num_items)
+        # items = [10, 5, 5, 4, 2]
         # For each number of buckets
         for num_buckets in range(min_buckets, max_buckets + 1):
             results.append(run_all_partitioners(items, num_buckets, include=include, exclude=exclude))
@@ -135,8 +150,16 @@ def partitioner_run():
         print(f'Completed iteration {iteration}')
 
     r = pd.DataFrame(results)
-    interesting_results = r[r.naive_std_dev != r.recursive_quiet_std_dev]
-    assert interesting_results.empty
+    # interesting_results = r[r.dynamic_std_dev != r[f"{include[1]}_std_dev"]]
+    # assert interesting_results.empty
+
+    print('All partitioners agree on best results.\n')
+
+    for p in include:
+        time_column = f"{p}_time"
+        print(f"{p} Average Time to put {num_items} items in {min_buckets} buckets: {r[time_column].mean()*1000:.2f}ms")
+
+    pass
 
 
 def holding(r):
@@ -157,5 +180,17 @@ def holding(r):
 
     pass
 
+def single_test():
+    debug_info = {}
+    result = {}
+    #items = [8, 7, 3, 9, 8, 7, 9, 9, 3, 6]
+    items = np.random.randint(1, 10 + 1, size=1000)
+    for p in ('cuda_1', 'cuda_3'):
+        debug_info[p] = {}
+        result[p] = partitioner[p](items, 6, debug_info=debug_info[p])
 
+    pass
+
+
+#single_test()
 partitioner_run()

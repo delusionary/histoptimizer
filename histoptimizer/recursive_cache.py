@@ -13,19 +13,30 @@ that creates partitions, or buckets, such that the variance/standard deviation b
 minimized.
 """
 import numpy as np
-import functools
+import histoptimizer
+import sys
+
+name = 'recursive_cache'
 
 
-#@functools.lru_cache(maxsize=400, typed=False)
-def min_cost_partition(items: list, k: int, last_item=None, mean=None):
+def min_cost_partition(items: list, k: int, last_item=None, mean=None, cache=None):
     """
 
     """
+    # Return cache hit if there is one.
+    if cache is None:
+        cache = {}
+    if cache.get(k, None) is None:
+        cache[k] = {}
+    cached_value = cache[k].get(last_item, None)
+    if cached_value is not None:
+        return cache[k][last_item]
+
     n = len(items)
     j = k - 1
-    if not mean:
+    if mean is None:
         mean = sum(items) / k
-    if not last_item:
+    if last_item is None:
         last_item = n - 1
     first_possible_position = j
     best_cost = np.inf
@@ -34,26 +45,25 @@ def min_cost_partition(items: list, k: int, last_item=None, mean=None):
     # location of the second divider
     if j == 0:
         return (sum(items[0:last_item + 1]) - mean)**2, []
-        #for current_divider_location in range(1, last_item + 1):
-        # lh_cost = (sum(items[0:current_divider_location]) - mean)**2
-        #    rh_cost = (sum(items[current_divider_location:last_item + 1]) - mean) ** 2
-        #    cost = lh_cost + rh_cost
-        #    if cost < best_cost:
-        #        best_cost = cost
-        #        dividers = [current_divider_location]
-        #return best_cost, dividers
 
     for current_divider_location in range(first_possible_position, last_item + 1):
         for previous_divider_location in range(j - 1, current_divider_location):
             (lh_cost, previous_dividers) = min_cost_partition(items, k - 1, last_item=current_divider_location - 1,
-                                                              mean=mean)
+                                                         mean=mean, cache=cache)
             rh_cost = (sum(items[current_divider_location:last_item + 1]) - mean) ** 2
             cost = lh_cost + rh_cost
             if cost < best_cost:
                 best_cost = cost
                 dividers = previous_dividers + [current_divider_location]
+
+    cache[k][last_item] = (best_cost, dividers)
     return best_cost, dividers
 
 
 def partition(items, k, debug_info=None):
-    return min_cost_partition(items, k)[1]
+    cache = {}
+    dividers = min_cost_partition(items, k, cache=cache)[1]
+    if debug_info is not None:
+        debug_info['cache'] = sys.getsizeof(cache)
+    return dividers
+
