@@ -33,5 +33,6 @@ setup(
     entry_points='''
         [console_scripts]
         histoptimizer=histoptimizer.cli:cli
+        histobench=histoptimizer.benchmark:cli
     ''',
 )

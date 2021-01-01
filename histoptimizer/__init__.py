@@ -1,15 +1,21 @@
 import pandas as pd
 import numpy as np
 
-def get_partitioner_dict(*modules):
 
+def get_partitioner_dict(*modules):
+    """
+    Given a list of modules which have a `partition` function and
+    optionally a `name` variable, return a dictionary that maps
+    `name` -> `partition` for any modules that have a `name`.
+
+    This allows for partitioner modules to specify a standardized
+    name by which they can be referenced.
+    """
     partitioners = {}
     for m in modules:
-        partitioners[m.name] = m.partition
+        if name := getattr(m, 'name', None):
+            partitioners[name] = m.partition
     return partitioners
-
-def partitioner(implementation='numpy'):
-    return partitioners[implementation]
 
 
 def cuda_supported():
@@ -59,7 +65,7 @@ def bucket_generator(dividers: np.array, num_items: int):
 
 
 def histoptimize(data: pd.DataFrame, sizes: str, buckets: int, column_name: str,
-                 implementation: str):
+                 partitioner):
     """
     Histoptimize takes a Pandas DataFrame and returns a Series that distributes them
     sequentially into the given number of buckets with the minimum possible standard deviation.
@@ -67,5 +73,5 @@ def histoptimize(data: pd.DataFrame, sizes: str, buckets: int, column_name: str,
 
     """
     items = data[sizes].astype('float32').to_numpy(dtype=np.float32)
-    partitions = partitioners[implementation](items, buckets)
+    partitions, variance = partitioner(items, buckets)
     return pd.Series((b for b in bucket_generator(partitions, len(items))))

@@ -62,8 +62,8 @@ def min_cost_partition(items: list, k: int, last_item=None, mean=None, cache=Non
 
 def partition(items, k, debug_info=None):
     cache = {}
-    dividers = min_cost_partition(items, k, cache=cache)[1]
+    variance, dividers = min_cost_partition(items, k, cache=cache)
     if debug_info is not None:
         debug_info['cache'] = sys.getsizeof(cache)
-    return dividers
+    return dividers, variance
 

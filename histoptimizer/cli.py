@@ -3,7 +3,7 @@ import pandas
 from time import time
 import sys
 
-from histoptimizer import histoptimize
+from histoptimizer import histoptimize, get_partitioner_dict
 
 import histoptimizer.recursive
 import histoptimizer.recursive_cache
@@ -13,10 +13,10 @@ import histoptimizer.cuda_2
 import histoptimizer.cuda_3
 import histoptimizer.dynamic
 import histoptimizer.enumerate
-import histoptimizer.pandas
+import histoptimizer.enumerate_pandas
 
-partitioner = histoptimizer.get_partitioner_dict(
-    histoptimizer.pandas,
+partitioners = histoptimizer.get_partitioner_dict(
+    histoptimizer.enumerate_pandas,
     histoptimizer.enumerate,
     histoptimizer.dynamic,
     histoptimizer.cuda_1,

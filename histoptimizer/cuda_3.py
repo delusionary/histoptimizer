@@ -104,7 +104,7 @@ def cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items, buc
 
     cuda.syncthreads()
 
-    # Reduce the values in the shared memory segments to find the lowest overall value
+    # Reduce the values from each thread in the shared memory segments to find the lowest overall value.
     s = 1
     while s < item_pairs_per_block:
         if item_thread_id % (2 * s) == 0:
@@ -189,7 +189,7 @@ def partition(items, num_buckets, debug_info=None):
         debug_info['mean'] = mean_bucket_sum
 
     #partitions = [reconstruct_partition(divider_location, len(items), k) for k in range(0, num_buckets + 1)]
-    return partition
+    return partition, min_cost[len(items) - 1, num_buckets]
 
 # start = timer()
 # partitions = numba_partition([1,2,3,4,5,6,7,8,9,10], 3)

@@ -100,7 +100,6 @@ def partition(items, num_buckets, debug_info=None, mean=None):
             min_variance = variance
             best_partition = dividers[:]
         previous_dividers[:] = dividers[:]
-    if debug_info is not None:
-        debug_info['variance'] = min_variance
-    return np.array(best_partition)
+
+    return np.array(best_partition), min_variance
 

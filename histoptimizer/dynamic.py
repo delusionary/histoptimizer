@@ -64,4 +64,4 @@ def partition(items, buckets, debug_info=None):
         debug_info['divider_location'] = divider_location
 
     partition = reconstruct_partition(divider_location, num_items, buckets)
-    return partition
+    return partition, min_cost[len(items) - 1, buckets]

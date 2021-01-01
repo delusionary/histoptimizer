@@ -122,8 +122,7 @@ def partition(items, num_buckets, debug_info=None):
         debug_info['min_cost'] = min_cost
         debug_info['divider_location'] = divider_location
 
-    #partitions = [reconstruct_partition(divider_location, len(items), k) for k in range(0, num_buckets + 1)]
-    return partition
+    return partition, min_cost[len(items) - 1, num_buckets]
 
 # start = timer()
 # partitions = numba_partition([1,2,3,4,5,6,7,8,9,10], 3)

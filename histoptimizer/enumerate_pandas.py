@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd
 import histoptimizer
 
-name = 'pandas'
+name = 'enumerate_pandas'
+
 
 def get_partition_sums(dividers, items):
     """
@@ -69,5 +70,5 @@ def partition(items, num_buckets, debug_info=None):
     dividers = df[df.cost == df.cost.min()].iloc[0]['dividers']
     if debug_info is not None:
         debug_info['df'] = df
-    return dividers
+    return dividers, df.cost.min()
 
