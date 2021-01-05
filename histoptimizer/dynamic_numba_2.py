@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from numba import guvectorize, float32, int64
+from numba import guvectorize, float32, int64, prange
 from histoptimizer import get_prefix_sums, partitioner
 
 name = 'dynamic_numba_2'
@@ -25,17 +25,17 @@ def reconstruct_partition(divider_location, num_items, num_buckets):
     ['i4, f4[:], f4[:], f4, f4[:], f4[:]'],
     '(),(m),(n),()->(n),(n)',
     nopython=True,
-    target='cpu'
+    target='parallel'
 )
 def get_min_cost(bucket, prefix_sum, previous_row, mean, current_row_cost, current_row_dividers):
     current_row_cost[0] = previous_row[0]
     current_row_cost[1] = previous_row[1]
     current_row_dividers[0] = 0
     current_row_dividers[1] = 0
-    for item in range(2, len(prefix_sum)):
+    for item in prange(2, len(prefix_sum)):
         min_cost = np.inf
         divider_location = 0
-        for previous_item in range(bucket - 1, item):
+        for previous_item in prange(bucket - 1, item):
             cost = previous_row[previous_item] + ((prefix_sum[item] - prefix_sum[previous_item]) - mean) ** 2
             if cost < min_cost:
                 min_cost = cost
@@ -94,4 +94,4 @@ def partition(items, buckets: int, debug_info: dict = None) -> list:
         debug_info['divider_location'] = divider_location
 
     partition = reconstruct_partition(divider_location, len(items), buckets)
-    return partition, min_cost[len(items), buckets] / num_buckets
+    return partition, min_cost[len(items), buckets] / buckets

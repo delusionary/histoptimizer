@@ -3,6 +3,8 @@ import math
 from numba import cuda
 import numpy as np
 
+from histoptimizer.cuda_common import add_debug_info, reconstruct_partition
+
 # import os; os.environ['NUMBA_ENABLE_CUDASIM'] = '1'
 
 
@@ -15,29 +17,6 @@ needs_precompile = True
 threads_per_item_pair = 8
 item_pairs_per_block = 8
 threads_per_block = threads_per_item_pair * item_pairs_per_block
-
-
-def reconstruct_partition(divider_location, num_items, num_buckets):
-    if num_buckets < 2:
-        return np.array(0)
-    partitions = np.zeros((num_buckets - 1,), dtype=np.int)
-    divider = num_buckets
-    while divider > 2:
-        partitions[divider - 2] = divider_location[num_items, divider]
-        num_items = divider_location[num_items, divider]
-        divider -= 1
-    partitions[0] = divider_location[num_items, divider]
-    return partitions
-
-
-@cuda.jit
-def cuda_reconstruct(divider_location, num_items, num_buckets, partitions):
-    divider = num_buckets
-    while divider > 2:
-        partitions[divider - 2] = divider_location[num_items, divider]
-        num_items = divider_location[num_items, divider]
-        divider -= 1
-    partitions[0] = divider_location[num_items, divider]
 
 
 @cuda.jit
@@ -144,13 +123,11 @@ def partition(items, num_buckets, debug_info=None):
     prefix_sum = np.zeros((len(items)), dtype=np.float32)
     item_cost = np.zeros((len(items)), dtype=np.float32)
     mean_bucket_sum = sum(items) / num_buckets
+
     # Pre-calculate prefix sums for items in the array.
     for item in range(1, len(items)):
         prefix_sum[item] = prefix_sum[item - 1] + items[item]
         item_cost[item] = (prefix_sum[item] - mean_bucket_sum)**2
-    # Determine the min cost of placing the first divider at each item.
-    # get_cost = np.vectorize(lambda x: (x-mean_bucket_sum)**2)
-    # item_cost = get_cost(items)
 
     prefix_sum_gpu = cuda.to_device(prefix_sum)
     mean_value_gpu = cuda.to_device(np.array([mean_bucket_sum], dtype=np.float32))
@@ -169,28 +146,7 @@ def partition(items, num_buckets, debug_info=None):
         bucket_gpu = cuda.to_device(np.array([bucket]))
         cuda_partition_kernel[num_blocks, threads_per_block](min_cost_gpu, divider_location_gpu, prefix_sum_gpu, num_items_gpu, bucket_gpu, mean_value_gpu)
 
-    # TODO(de@lusion.org) Troubleshoot reconstruction kernel and re-enable this.
-    # partitions_gpu = cuda.device_array(num_buckets, dtype=np.int)
-    # cuda_reconstruct[1, 1](divider_location_gpu, len(items), num_buckets, partitions_gpu)
+    min_variance, partition = reconstruct_partition(items, num_buckets, min_cost_gpu, divider_location_gpu)
+    add_debug_info(debug_info, divider_location_gpu, items, min_cost_gpu, prefix_sum)
 
-    min_cost = min_cost_gpu.copy_to_host()
-    divider_location = divider_location_gpu.copy_to_host()
-    partition = reconstruct_partition(divider_location, len(items) - 1, num_buckets)
-    # partitions = []
-
-    #partitions = partitions_gpu.copy_to_host()
-
-    if debug_info is not None:
-        # TODO(de@lusion.org) After enabling cuda reconstructor, load min_cost and divider_location here.
-        debug_info['prefix_sum'] = prefix_sum
-        debug_info['items'] = items
-        debug_info['min_cost'] = min_cost
-        debug_info['divider_location'] = divider_location
-        debug_info['mean'] = mean_bucket_sum
-
-    #partitions = [reconstruct_partition(divider_location, len(items), k) for k in range(0, num_buckets + 1)]
-    return partition, min_cost[len(items) - 1, num_buckets] / num_buckets
-
-# start = timer()
-# partitions = numba_partition([1,2,3,4,5,6,7,8,9,10], 3)
-# end = timer()
+    return partition, min_variance

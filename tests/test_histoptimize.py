@@ -64,7 +64,7 @@ def run_all_partitioners(items, num_buckets, exclude=[], include=None):
 
     return results
 
-def partitioner_run():
+def test_random_data():
     """
     This is a test function I use for IDE Debugging
     """
@@ -98,10 +98,6 @@ def partitioner_run():
 
     print('All partitioners agree on best results.\n')
 
-    # for p in include:
-    #    time_column = f"{p}_time"
-    #    print(f"{p} Average Time to put {num_items} items in {min_buckets} buckets: {r[time_column].mean()*1000:.2f}ms")
-
     pass
 
 
@@ -116,12 +112,16 @@ def test_single_test():
     variance = {}
     elapsed_seconds = {}
     items = [5, 1, 6, 8, 5]
-    for p in ('dynamic', 'enumerate_pandas'):
+    for p in ('dynamic', 'cuda_1'):
         debug_info[p] = {}
         start = time.time()
         dividers[p], variance[p] = partitioners[p](items, 3, debug_info=debug_info[p])
         end = time.time()
         elapsed_seconds[p] = end - start
+
+    # Ensure the dividers returned are all the same.
+    some_dividers = list(dividers[next(iter(dividers))])
+    assert all([list(dividers[d]) == some_dividers for d in dividers])
 
     pass
 

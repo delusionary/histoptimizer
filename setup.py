@@ -27,8 +27,10 @@ setup(
     ],
     install_requires=[
         'Click',
+        'numba',
         'numpy',
-        'pandas'
+        'pandas',
+        'pytest'
     ],
     entry_points='''
         [console_scripts]
