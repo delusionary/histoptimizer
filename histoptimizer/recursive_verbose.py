@@ -40,6 +40,6 @@ def min_cost_partition(items, k, last_item=None, mean=None):
 
 def partition(items, k, debug_info=None):
     variance, dividers = min_cost_partition(items, k)
-    return dividers, variance
+    return dividers, variance / k
 
 

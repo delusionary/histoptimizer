@@ -1,0 +1,10 @@
+[
+  {"buckets": 3, "dividers": [[3, 4]], "items": [5, 1, 6, 8, 5], "variance": 8.222222},
+  {"buckets": 4, "dividers": [[1, 2, 3]], "items": [10, 8, 3, 5, 2], "variance": 6.5},
+  {"buckets": 3, "dividers": [[2, 4], [3, 4]], "items": [6, 2, 1, 8, 8], "variance": 0.222222},
+  {"buckets": 3, "dividers": [[2, 4]], "items": [5, 5, 6, 9, 7], "variance": 10.888888},
+  {"buckets": 4, "dividers": [[1, 3, 4]], "items": [7, 2, 7, 8, 5], "variance": 2.1875},
+  {"buckets": 4, "dividers": [[1, 2, 4]], "items": [5, 7, 2, 2, 7], "variance": 1.6875},
+  {"buckets": 4, "dividers": [[2, 3, 4]], "items": [3, 3, 5, 3, 4], "variance": 1.25},
+  {"buckets": 3, "dividers": [[1, 3]], "items": [10, 5, 5, 4, 2], "variance": 3.555555}
+]

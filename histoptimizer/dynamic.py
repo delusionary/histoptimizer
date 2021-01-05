@@ -27,14 +27,14 @@ def build_matrices(buckets, prefix_sum):
         min_cost[item, 1] = (prefix_sum[item] - mean)**2
     for bucket in range(1, buckets + 1):
         min_cost[1, bucket] = (prefix_sum[1] - mean)**2
-    for item in range(2, len(prefix_sum)):
-        # evaluate main recurrence
-        for bucket in range(2, buckets + 1):
-            min_cost_temp = np.finfo(dtype=np.float32).max
+    for bucket in range(2, buckets + 1):
+        for item in range(2, len(prefix_sum)):
+            # evaluate main recurrence
+            min_cost_temp = np.inf
             divider_location_temp = 0
             for previous_item in range(bucket - 1, item):
                 cost = min_cost[previous_item, bucket - 1] + ((prefix_sum[item] - prefix_sum[previous_item]) - mean)**2
-                if min_cost_temp > cost:
+                if cost < min_cost_temp:
                     min_cost_temp = cost
                     divider_location_temp = previous_item
             min_cost[item, bucket] = min_cost_temp
@@ -64,4 +64,4 @@ def partition(items, buckets, debug_info=None):
         debug_info['divider_location'] = divider_location
 
     partition = reconstruct_partition(divider_location, num_items, buckets)
-    return partition, min_cost[len(items) - 1, buckets]
+    return partition, min_cost[num_items, buckets] / buckets

@@ -61,7 +61,7 @@ def cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items, buc
     block_idx = cuda.blockIdx.x
     block_size = cuda.blockDim.x
     first_item = thread_idx + (block_idx * block_size)
-    if first_item > num_items[0] / 2:
+    if first_item > (num_items[0] // 2) + 1:
         return
 
     if first_item > 1:
@@ -86,7 +86,7 @@ def cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items, buc
 
     divider = 0
     tmp = np.inf
-    for previous_item in range(1, second_item):
+    for previous_item in range(bucket[0] - 1, second_item):
         cost = min_cost[previous_item, bucket[0] - 1] + (
                     (prefix_sum[second_item] - prefix_sum[previous_item]) - mean[0]) ** 2
         if tmp > cost:
@@ -150,7 +150,7 @@ def partition(items, num_buckets, debug_info=None):
         debug_info['mean'] = mean_bucket_sum
 
     #partitions = [reconstruct_partition(divider_location, len(items), k) for k in range(0, num_buckets + 1)]
-    return partition, min_cost[len(items) - 1, num_buckets]
+    return partition, min_cost[len(items) - 1, num_buckets] / num_buckets
 
 # start = timer()
 # partitions = numba_partition([1,2,3,4,5,6,7,8,9,10], 3)

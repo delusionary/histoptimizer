@@ -101,5 +101,5 @@ def partition(items, num_buckets, debug_info=None, mean=None):
             best_partition = dividers[:]
         previous_dividers[:] = dividers[:]
 
-    return np.array(best_partition), min_variance
+    return np.array(best_partition), min_variance / num_buckets
 

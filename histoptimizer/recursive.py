@@ -14,24 +14,14 @@ minimized.
 """
 import numpy as np
 import histoptimizer
-import sys
 
-name = 'recursive_cache'
+name = 'recursive'
 
 
-def min_cost_partition(items: list, k: int, last_item=None, mean=None, cache=None):
+def min_cost_partition(items: list, k: int, last_item=None, mean=None):
     """
 
     """
-    # Return cache hit if there is one.
-    if cache is None:
-        cache = {}
-    if cache.get(k, None) is None:
-        cache[k] = {}
-    cached_value = cache[k].get(last_item, None)
-    if cached_value is not None:
-        return cache[k][last_item]
-
     n = len(items)
     j = k - 1
     if mean is None:
@@ -49,21 +39,16 @@ def min_cost_partition(items: list, k: int, last_item=None, mean=None, cache=Non
     for current_divider_location in range(first_possible_position, last_item + 1):
         for previous_divider_location in range(j - 1, current_divider_location):
             (lh_cost, previous_dividers) = min_cost_partition(items, k - 1, last_item=current_divider_location - 1,
-                                                         mean=mean, cache=cache)
+                                                              mean=mean)
             rh_cost = (sum(items[current_divider_location:last_item + 1]) - mean) ** 2
             cost = lh_cost + rh_cost
             if cost < best_cost:
                 best_cost = cost
                 dividers = previous_dividers + [current_divider_location]
-
-    cache[k][last_item] = (best_cost, dividers)
     return best_cost, dividers
 
 
 def partition(items, k, debug_info=None):
-    cache = {}
-    variance, dividers = min_cost_partition(items, k, cache=cache)
-    if debug_info is not None:
-        debug_info['cache'] = sys.getsizeof(cache)
+    variance, dividers = min_cost_partition(items, k)
     return dividers, variance / k
 

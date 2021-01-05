@@ -1,29 +1,9 @@
 import numpy as np
 import pandas as pd
-import histoptimizer
+
+from histoptimizer import get_partition_sums
 
 name = 'enumerate_pandas'
-
-
-def get_partition_sums(dividers, items):
-    """
-    Given a list of divider locations and a list of items,
-    return a list of partition sums.
-    """
-    #  fix this to take and use prefix sums.
-    partitions = [.0]*(len(dividers)+1)
-    for x in range(0, len(dividers)+1):
-        if x == 0:
-            left_index = 0
-        else:
-            left_index = dividers[x-1]
-        if x == len(dividers):
-            right_index = len(items)
-        else:
-            right_index = dividers[x]
-        for y in range(left_index, right_index):
-            partitions[x] += items[y]
-    return partitions
 
 
 def get_partitions(num_items, buckets, prefix):
@@ -66,7 +46,7 @@ def partition(items, num_buckets, debug_info=None):
     all_partitions = get_partitions(n, num_buckets, [])
     df = pd.DataFrame(pd.Series(all_partitions, name='dividers'))
     df['partition_sums'] = df['dividers'].apply(get_partition_sums, items=items)
-    df['cost'] = df['partition_sums'].apply(np.var)
+    df['cost'] = df['partition_sums'].apply(np.var)  # df['partition_sums'].apply(np.var)
     dividers = df[df.cost == df.cost.min()].iloc[0]['dividers']
     if debug_info is not None:
         debug_info['df'] = df

@@ -49,4 +49,4 @@ def numpy_min_max_sum_partition(items, buckets, debug_info=None):
         debug_info['divider_location'] = divider_location
 
     partition = reconstruct_partition(divider_location, n, buckets)
-    return partition, min_cost
+    return partition, min_cost / num_buckets

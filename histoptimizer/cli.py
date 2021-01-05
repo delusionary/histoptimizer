@@ -2,6 +2,7 @@ import click
 import pandas
 from time import time
 import sys
+import re
 
 from histoptimizer import histoptimize, get_partitioner_dict
 
@@ -12,13 +13,19 @@ import histoptimizer.cuda_1
 import histoptimizer.cuda_2
 import histoptimizer.cuda_3
 import histoptimizer.dynamic
+import histoptimizer.dynamic_numba
+import histoptimizer.dynamic_numpy
+import histoptimizer.dynamic_numba_2
 import histoptimizer.enumerate
 import histoptimizer.enumerate_pandas
 
-partitioners = histoptimizer.get_partitioner_dict(
+partitioners = get_partitioner_dict(
     histoptimizer.enumerate_pandas,
     histoptimizer.enumerate,
     histoptimizer.dynamic,
+    histoptimizer.dynamic_numba,
+    histoptimizer.dynamic_numba_2,
+    histoptimizer.dynamic_numpy,
     histoptimizer.cuda_1,
     histoptimizer.cuda_2,
     histoptimizer.cuda_3,
@@ -26,6 +33,33 @@ partitioners = histoptimizer.get_partitioner_dict(
     histoptimizer.recursive_verbose,
     histoptimizer.recursive
 )
+
+
+def parse_set_spec(spec: str, substitute: dict = {}) -> list:
+    """
+    Parse strings representing sets of integers.
+    """
+    items = []
+    for variable, value in substitute.items():
+        spec = spec.replace(variable, str(value))
+    for element in spec.split(','):
+        if match := re.match(r'(\d+)(?:-(\d+))?(?::(\d+))?$', element):
+            g = list(map(lambda x: int(x) if x is not None else None, match.groups()))
+            if g[2] is not None:
+                # Range and step
+                if g[1] is None:
+                    raise ValueError(f'You must specify a range to specify a step. Cannot parse "{element}"')
+                items.extend([x for x in range(g[0], g[1] + 1, g[2])])
+            elif g[1] is not None:
+                # Range
+                items.extend([x for x in range(g[0], g[1] + 1)])
+            else:
+                # Single number
+                items.extend([g[0]])
+        else:
+            raise ValueError(f'Could not interpret set specification "{element}" ')
+
+    return sorted(list(set(items)))
 
 def clean_and_sort(data, sort_key, ascending, sizes, max_rows, silent_discard=False):
     """
@@ -40,7 +74,7 @@ def clean_and_sort(data, sort_key, ascending, sizes, max_rows, silent_discard=Fa
         data = data.sort_values(by=sort_key, ascending=True)
     data = data[data[sizes].isna() == False].reset_index()
     if len(data.index) != oldlen and not silent_discard:
-        raise ValueError('Some rows have invalid, zero, or missing size values.')
+        raise ValueError('Some rows have invalid or missing size values.')
 
     if max_rows:
         data = data.truncate(after=max_rows - 1)
@@ -52,7 +86,7 @@ def clean_and_sort(data, sort_key, ascending, sizes, max_rows, silent_discard=Fa
 @click.argument('file', type=click.File('rb'))
 @click.argument('id_column', type=str)
 @click.argument('size_column', type=str)
-@click.argument('partitions', type=click.IntRange(2, 3000), nargs=-1)
+@click.argument('partitions', type=str)
 @click.option('-l', '--limit', type=int, default=None,
               help='Take the first {limit} records from the input, rather than the whole file.')
 @click.option('-a/-d', '--ascending/--descending', '--asc/--desc', default=True,
@@ -95,7 +129,9 @@ def cli(file, id_column, size_column, partitions, limit, ascending,
     if sort_key:
         data = data.sort_values(sort_key, ascending=ascending).reset_index()
 
-    for num_buckets in partitions:
+    bucket_list = parse_set_spec(partitions)
+
+    for num_buckets in bucket_list:
         start = time()
         data[f'{column_prefix}{num_buckets}'] = histoptimize(data, size_column, num_buckets, column_prefix, implementation)
         end = time()
