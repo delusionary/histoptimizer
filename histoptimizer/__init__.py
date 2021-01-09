@@ -51,6 +51,7 @@ def get_partition_sums(dividers, items):
             partitions[x] += items[y]
     return partitions
 
+
 def get_prefix_sums(items):
     """
     Given a list of item sizes, return a NumPy float32 array where the first item is 0.0 and subsequent items are the
@@ -131,7 +132,7 @@ def histoptimize(data: pd.DataFrame, sizes: str, bucket_list: list, column_name:
     in such a manner as to minimize the variance/standard deviation over all buckets.
 
     Args:
-        data (DataFrame): The first parameter.
+        data (DataFrame): The DataFrame to add columns to.
         sizes (str): Column to get size values from.
         bucket_list (list): A list of integer bucket sizes.
         column_name (str): Prefix to be added to the number of buckets to get the column name.
@@ -141,21 +142,27 @@ def histoptimize(data: pd.DataFrame, sizes: str, bucket_list: list, column_name:
 
     Returns:
         DataFrame: Original DataFrame with one or more columns added.
+        list(str): List of column names added to the original DataFrame
     """
     partitions = pd.DataFrame(columns=('column_name', 'dividers', 'variance'))
     items = data[[sizes]].astype('float32').to_numpy(dtype=np.float32)
     for buckets in bucket_list:
         dividers, variance = partitioner_func(items, buckets)
-        partitions.append({
-          'column_name': f'{column_name}{buckets}',
-          'dividers': dividers,
-          'variance': variance})
+        partitions = partitions.append({
+            'column_name': f'{column_name}{buckets}',
+            'dividers': dividers,
+            'variance': variance},
+            ignore_index=True)
 
     if optimal_only:
-        partitions = partitions[partitions.variance == partitions.variance.min()].limit(1)
-    for p in partitions.iterrows():
-        data[p['column_name']] = pd.Series((b for b in bucket_generator(p['dividers'], len(items))))
-    return data
+        partitions = partitions[partitions.variance == partitions.variance.min()].iloc[0:1]
+
+    columns_added = []
+    for p in partitions.itertuples():
+        data[p.column_name] = pd.Series((b for b in bucket_generator(p.dividers, len(items))))
+        columns_added.append(p.column_name)
+
+    return data, columns_added
 
 
 def partitioner(partitioner_func):

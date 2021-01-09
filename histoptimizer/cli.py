@@ -6,42 +6,58 @@ import re
 
 from histoptimizer import histoptimize, get_partitioner_dict
 
-import histoptimizer.recursive
-import histoptimizer.recursive_cache
-import histoptimizer.recursive_verbose
-import histoptimizer.cuda_1
-import histoptimizer.cuda_2
+import histoptimizer.historical.enumerate_pandas
+import histoptimizer.historical.enumerate
+import histoptimizer.historical.recursive_cache
+import histoptimizer.historical.recursive_verbose
+import histoptimizer.historical.recursive
+import histoptimizer.historical.cuda_1
+import histoptimizer.historical.cuda_2
+import histoptimizer.historical.dynamic_numpy
+import histoptimizer.historical.dynamic_numba_2
+import histoptimizer.historical.dynamic_numba_3
 import histoptimizer.cuda_3
 import histoptimizer.dynamic
 import histoptimizer.dynamic_numba
-import histoptimizer.dynamic_numpy
-import histoptimizer.dynamic_numba_2
-import histoptimizer.dynamic_numba_3
-import histoptimizer.enumerate
-import histoptimizer.enumerate_pandas
+import histoptimizer.historical.enumerate_pandas
 
 partitioners = get_partitioner_dict(
-    histoptimizer.enumerate_pandas,
-    histoptimizer.enumerate,
+    histoptimizer.historical.enumerate_pandas,
+    histoptimizer.historical.enumerate,
     histoptimizer.dynamic,
     histoptimizer.dynamic_numba,
-    histoptimizer.dynamic_numba_2,
-    histoptimizer.dynamic_numba_3,
-    histoptimizer.dynamic_numpy,
-    histoptimizer.cuda_1,
-    histoptimizer.cuda_2,
+    histoptimizer.historical.dynamic_numba_2,
+    histoptimizer.historical.dynamic_numba_3,
+    histoptimizer.historical.dynamic_numpy,
+    histoptimizer.historical.cuda_1,
+    histoptimizer.historical.cuda_2,
     histoptimizer.cuda_3,
-    histoptimizer.recursive_cache,
-    histoptimizer.recursive_verbose,
-    histoptimizer.recursive
+    histoptimizer.historical.recursive_cache,
+    histoptimizer.historical.recursive_verbose,
+    histoptimizer.historical.recursive
 )
 
 
-def parse_set_spec(spec: str, substitute: dict = {}) -> list:
+def parse_set_spec(spec: str, substitute: dict = None) -> list:
     """
-    Parse strings representing sets of integers.
+    Parse strings representing sets of integers, returning a tuple consisting of all integers in the specified set.
+
+    The format is a comma-separated list of range specifications. A range specification may be a single number or two
+    numbers (beginning and ending, inclusive) separated by a '-'. If two numbers, a ':' and third number may be
+    supplied to provide a step. If the end number is not reachable in complete steps then the series will be truncated
+    at the last valid step size.
+
+    A dictionary may optionally be supplied that maps variable names to integer values. Variable names will be replaced
+    with corresponding values before the set specification is evaluated.
+
+    Example:
+        8,15-17,19-22:2 --> (8, 15, 16, 17, 19, 21)
+
+
     """
     items = []
+    if substitute is None:
+        substitute = {}
     for variable, value in substitute.items():
         spec = spec.replace(variable, str(value))
     for element in spec.split(','):
@@ -63,27 +79,6 @@ def parse_set_spec(spec: str, substitute: dict = {}) -> list:
 
     return sorted(list(set(items)))
 
-def clean_and_sort(data, sort_key, ascending, sizes, max_rows, silent_discard=False):
-    """
-    Performs some optional house-keeping on input files.
-    """
-    oldlen = len(data.index)
-    if sort_key is not None:
-        data = data[(data[sort_key].isna() == False)]
-        if len(data.index) != oldlen and not silent_discard:
-            raise ValueError('Some rows have invalid or missing sort key values.')
-        oldlen = len(data.index)
-        data = data.sort_values(by=sort_key, ascending=True)
-    data = data[data[sizes].isna() == False].reset_index()
-    if len(data.index) != oldlen and not silent_discard:
-        raise ValueError('Some rows have invalid or missing size values.')
-
-    if max_rows:
-        data = data.truncate(after=max_rows - 1)
-
-    return data
-
-
 @click.command()
 @click.argument('file', type=click.File('rb'))
 @click.argument('id_column', type=str)
@@ -101,8 +96,8 @@ def clean_and_sort(data, sort_key, ascending, sizes, max_rows, silent_discard=Fa
 @click.option('-s', '--sort-key', type=str, default=None,
               help='Optionally sort records by this column name before partitioning.')
 @click.option('-t', '--timing/--no-timing', default=False, help='Print partitioner timing information to stderr')
-@click.option('-i', '--implementation', type=str, default='numpy',
-              help='Use the named partitioner implementation. Defaults to "numpy". If you have an NVidia GPU '
+@click.option('-i', '--implementation', type=str, default='dynamic_numba',
+              help='Use the named partitioner implementation. Defaults to "dynamic_numba". If you have an NVidia GPU '
               'use "cuda" for better performance')
 @click.option('-o', '--output', type=click.File('w'), default=sys.stdout,
               help='Send output to the given file. Defaults to stdout.')
@@ -111,8 +106,8 @@ def clean_and_sort(data, sort_key, ascending, sizes, max_rows, silent_discard=Fa
 def cli(file, id_column, size_column, partitions, limit, ascending,
         print_all, column_prefix, sort_key, timing, implementation, output, output_format):
     """
-    Given a CSV, a row name column, a size column, sort key, and a number of buckets, sort the CSV by the given key, then distribute
-    the ordered keys as evenly as possible to the given number of buckets.
+    Given a CSV, a row name column, a size column, sort key, and a number of buckets, optionally sort the CSV by the
+    given key, then distribute the ordered keys as evenly as possible to the given number of buckets.
 
     > histoptimizer states.csv state_name population 10
     state_name, population, partition_10
@@ -133,14 +128,16 @@ def cli(file, id_column, size_column, partitions, limit, ascending,
 
     bucket_list = parse_set_spec(partitions)
 
-    for num_buckets in bucket_list:
-        start = time()
-        data[f'{column_prefix}{num_buckets}'] = histoptimize(data, size_column, num_buckets, column_prefix, implementation)
-        end = time()
-        click.echo(f"Executed in {end-start} seconds.", err=True)
+    data, partition_columns = histoptimize(data, size_column, bucket_list, column_prefix, partitioners[implementation])
+
+    # for num_buckets in bucket_list:
+    #     start = time()
+    #     data[f'{column_prefix}{num_buckets}'] = histoptimize(data, size_column, num_buckets, column_prefix, implementation)
+    #     end = time()
+    #     click.echo(f"Executed in {end-start} seconds.", err=True)
 
     if not print_all:
-        data = data[[id_column, sort_key, size_column] + [col for col in data if col.startswith(column_prefix)]]
+        data = data[[c for c in [id_column, sort_key, size_column] if c is not None] + partition_columns]
     if output_format == 'csv':
         data.to_csv(output, index=False)
     elif output_format == 'json':

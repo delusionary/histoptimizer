@@ -21,11 +21,11 @@ def histo_df():
 
 def test_get_partitioner_dict(monkeypatch):
     import histoptimizer.dynamic
-    import histoptimizer.cuda_2
+    import histoptimizer.historical.cuda_2
 
     partitioners = histoptimizer.get_partitioner_dict(
         histoptimizer.dynamic,
-        histoptimizer.cuda_2
+        histoptimizer.historical.cuda_2
     )
 
     for p in partitioners:
@@ -62,14 +62,15 @@ def test_partition_series(partitioner, histo_df):
 
 def test_histoptimize(partitioner, histo_df):
 
-    result = histoptimizer.histoptimize(histo_df, 'sizes', [2, 3], 'partitioner_', partitioner)
+    result, columns = histoptimizer.histoptimize(histo_df, 'sizes', [2, 3], 'partitioner_', partitioner)
 
     assert result['partitioner_2'].equals(pd.Series([1, 1, 2, 2]))
     assert result['partitioner_3'].equals(pd.Series([1, 2, 2, 3]))
 
+
 def test_histoptimize_optimal_only(partitioner, histo_df):
 
-    result = histoptimizer.histoptimize(histo_df, 'sizes', [2, 3], 'partitioner_', partitioner, optimal_only=True)
+    result, columns = histoptimizer.histoptimize(histo_df, 'sizes', [2, 3], 'partitioner_', partitioner, optimal_only=True)
 
     assert result['partitioner_3'].equals(pd.Series([1, 2, 2, 3]))
     assert set(result.columns) == {'id', 'sizes', 'partitioner_3'}

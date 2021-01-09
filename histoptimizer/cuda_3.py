@@ -20,7 +20,7 @@ threads_per_block = threads_per_item_pair * item_pairs_per_block
 
 
 @cuda.jit
-def init_items_kernel(min_cost, prefix_sum):
+def init_items_kernel(min_cost, prefix_sum): # pragma: no cover
     thread_idx = cuda.threadIdx.x
     block_idx = cuda.blockIdx.x
     block_size = cuda.blockDim.x
@@ -30,13 +30,13 @@ def init_items_kernel(min_cost, prefix_sum):
 
 
 @cuda.jit
-def init_buckets_kernel(min_cost, item):
+def init_buckets_kernel(min_cost, item): # pragma: no cover
     # item is a single-element array
     bucket = cuda.grid(1) + 1
     min_cost[1, bucket] = item[1]
 
 @cuda.jit
-def cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items, bucket, mean):
+def cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items, bucket, mean): # pragma: no cover
     """
     There is one thread for each pair of items.
     """

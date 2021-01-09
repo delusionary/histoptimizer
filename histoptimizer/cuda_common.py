@@ -13,7 +13,7 @@ def add_debug_info(debug_info, divider_location_gpu, items, min_cost_gpu, prefix
 
 
 @cuda.jit
-def cuda_reconstruct(divider_location, min_cost, num_items, num_buckets, partitions, min_variance):
+def cuda_reconstruct(divider_location, min_cost, num_items, num_buckets, partitions, min_variance): # pragma: no cover
     divider = num_buckets[0]
     next_location = num_items[0]
     min_variance[0] = min_cost[next_location, divider] / num_buckets[0]
