@@ -16,6 +16,7 @@ import histoptimizer.dynamic
 import histoptimizer.dynamic_numba
 import histoptimizer.dynamic_numpy
 import histoptimizer.dynamic_numba_2
+import histoptimizer.dynamic_numba_3
 import histoptimizer.enumerate
 import histoptimizer.enumerate_pandas
 
@@ -25,6 +26,7 @@ partitioners = get_partitioner_dict(
     histoptimizer.dynamic,
     histoptimizer.dynamic_numba,
     histoptimizer.dynamic_numba_2,
+    histoptimizer.dynamic_numba_3,
     histoptimizer.dynamic_numpy,
     histoptimizer.cuda_1,
     histoptimizer.cuda_2,

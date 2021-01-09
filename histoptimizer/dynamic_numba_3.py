@@ -1,9 +1,9 @@
 import numpy as np
 import os
-from numba import guvectorize, float32, int64, prange
+from numba import jit, float32, int32, prange, void
 from histoptimizer import get_prefix_sums, partitioner
 
-name = 'dynamic_numba_2'
+name = 'dynamic_numba_3'
 
 # noinspection DuplicatedCode
 def reconstruct_partition(divider_location, num_items, num_buckets):
@@ -20,16 +20,9 @@ def reconstruct_partition(divider_location, num_items, num_buckets):
 
 # os.environ['NUMBA_DISABLE_JIT'] = '1'
 # noinspection DuplicatedCode
-@guvectorize(
-    ['i4[:], i4, f4[:], f4[:,:], i4[:,:]'],
-    '(k),(),(n)->(n,k),(n,k)',
-    nopython=True,
-    target='cpu'
-)
-def build_matrices(bucket_list, buckets, prefix_sum, min_cost, divider_location):
+@jit(void(int32, float32[:], float32[:,:], int32[:,:]))
+def build_matrices(buckets, prefix_sum, min_cost, divider_location):
     n = len(prefix_sum)
-    # min_cost = np.zeros((n, buckets + 1), dtype=np.float32)
-    # divider_location = np.zeros((n, buckets + 1), dtype=np.int32)
     mean = prefix_sum[-1] / buckets
     for item in range(1, len(prefix_sum)):
         # min_cost[item, 1] = prefix_sum[item]
@@ -76,8 +69,10 @@ def partition(items, buckets: int, debug_info: dict = None) -> list:
     prefix_sum = get_prefix_sums(items)
 
     #min_cost, divider_location = init_matrices(buckets, prefix_sum)
-    bucket_list = np.zeros((buckets + 1), dtype=np.int32)
-    min_cost, divider_location = build_matrices(bucket_list, buckets, prefix_sum)
+    # bucket_list = np.zeros((buckets + 1), dtype=np.int32)
+    min_cost = np.zeros((len(prefix_sum), buckets + 1), dtype=np.float32)
+    divider_location = np.zeros((len(prefix_sum), buckets + 1), dtype=np.int32)
+    build_matrices(buckets, prefix_sum, min_cost, divider_location)
 
     if debug_info is not None:
         debug_info['items'] = items

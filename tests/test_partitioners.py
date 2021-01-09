@@ -77,12 +77,12 @@ def test_random_data():
     results = []
     num_iterations = 1
     item_list = range(5, 10)
-    bucket_list = range(2, 7)
+    bucket_list = range(2, 4)
     min_rand = 1
     max_rand = 10
 
     exclude = []  # ('slow', 'numpy_min_max_sum')
-    include = ['cuda_1', 'cuda_2', 'cuda_3']
+    include = ['dynamic_numba', 'dynamic_numba_2']
     for num_items in item_list:
         for num_buckets in bucket_list:
             for iteration in range(1, num_iterations+1):
@@ -93,7 +93,7 @@ def test_random_data():
                 print(f'Completed iteration {iteration}')
 
     r = pd.DataFrame(results)
-    interesting_results = r[r.dynamic_std_dev != r[f"{include[1]}_std_dev"]]
+    interesting_results = r[r.dynamic_numba_std_dev != r[f"{include[1]}_std_dev"]]
     assert interesting_results.empty
 
     print('All partitioners agree on best results.\n')
@@ -112,7 +112,7 @@ def test_single_test():
     variance = {}
     elapsed_seconds = {}
     items = [5, 1, 6, 8, 5]
-    for p in ('dynamic', 'cuda_1'):
+    for p in ('dynamic_numba', 'dynamic_numba_3'):
         debug_info[p] = {}
         start = time.time()
         dividers[p], variance[p] = partitioners[p](items, 3, debug_info=debug_info[p])
@@ -123,5 +123,4 @@ def test_single_test():
     some_dividers = list(dividers[next(iter(dividers))])
     assert all([list(dividers[d]) == some_dividers for d in dividers])
 
-    pass
 
