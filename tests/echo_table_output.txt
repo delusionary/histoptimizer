@@ -1,0 +1,10 @@
+Partitioner: dynamic
+         3      4
+  5  2.000  4.000
+  6  6.000  8.000
+
+Partitioner: dynamic_numba
+         3      4
+  5  1.000  3.000
+  6  5.000  7.000
+

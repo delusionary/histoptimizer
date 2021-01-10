@@ -26,7 +26,7 @@ setup(
         "License :: OSI Approved :: BSD License",
     ],
     install_requires=[
-        'Click',
+        'click',
         'numba',
         'numpy',
         'pandas',

@@ -76,8 +76,6 @@ def test_histoptimize_optimal_only(partitioner, histo_df):
     assert set(result.columns) == {'id', 'sizes', 'partitioner_3'}
 
 
-# TODO(kjoyner): Test optimal_only.
-
 def test_partitioner(partitioner):
     wrapper = histoptimizer.partitioner(partitioner)
 

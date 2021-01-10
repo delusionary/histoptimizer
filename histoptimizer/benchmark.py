@@ -1,12 +1,10 @@
 import re
 import sys
 import time
-import os
 
 import click
 import numpy as np
 import pandas as pd
-from numba import cuda
 from math import ceil, log10
 
 from histoptimizer.cli import partitioners, parse_set_spec
@@ -16,25 +14,38 @@ from histoptimizer.cli import partitioners, parse_set_spec
 
 def partitioner_pivot(df: pd.DataFrame, partitioner: str) -> pd.DataFrame:
     """
+    Given a DataFrame of results produced by histobench, and the name of a partitioner,
+    isolate results of that partitioner and create a pivot table on bucket, so that
+    the frame becomes a grid with # items in rows and # buckets in columns.
 
+    Args:
+        df (DataFrame): Results DataFrame.
+        partitioner: partitioner name to isolate.
+    Returns:
+k
+    Raises:
     """
     return df[df.partitioner == partitioner].groupby(
         ['num_items', 'buckets'],
         as_index=False)\
         .mean()\
         .pivot(index=['num_items'],
-                      columns='buckets',
-                      values='elapsed_seconds')
+               columns='buckets',
+               values='elapsed_seconds')
 
 
 def benchmark(partitioner_list: list, item_list: list, bucket_list: list, iterations: int =1,
               begin_range: int = 1, end_range: int = 10, specified_items_sizes: list = None, verbose: bool = False)\
         -> pd.DataFrame:
     """
+    Args:
 
+    Returns:
+
+    Raises:
     """
-    r = pd.DataFrame(columns=(
-    'partitioner', 'num_items', 'buckets', 'iteration', 'variance', 'elapsed_seconds', 'dividers', 'items'))
+    r = pd.DataFrame(columns=('partitioner', 'num_items', 'buckets', 'iteration',
+                              'variance', 'elapsed_seconds', 'dividers', 'items'))
     for num_items in item_list:
         for num_buckets in bucket_list:
             results = []
@@ -68,6 +79,13 @@ def benchmark(partitioner_list: list, item_list: list, bucket_list: list, iterat
 
 
 def echo_tables(partitioner_list: list, r: pd.DataFrame):
+    """
+    Args:
+
+    Returns:
+
+    Raises:
+    """
     for p in partitioner_list:
         grid = partitioner_pivot(r, p)
         items_width = ceil(max(log10(grid.index.max()), 1)) + 2  # wide enough for the widest num_items value.
@@ -79,15 +97,22 @@ def echo_tables(partitioner_list: list, r: pd.DataFrame):
         click.echo()
 
 
-def get_sizes_from(sizes_from: str) -> list:
+def get_sizes_from(file_path: str) -> np.ndarray:
+    """
+    Args:
+
+    Returns:
+
+    Raises:
+    """
     specified_items_sizes = None
-    if sizes_from is not None:
-        if '.json' in sizes_from:
-            specified_items = pd.read_json(sizes_from, orient='records')
-        elif '-' == sizes_from:
+    if file_path is not None:
+        if '.json' in file_path:
+            specified_items = pd.read_json(file_path, orient='records')
+        elif '-' == file_path:
             specified_items = pd.read_csv(sys.stdin)
         else:
-            specified_items = pd.read_csv(sizes_from)
+            specified_items = pd.read_csv(file_path)
         if len(specified_items.columns) != 1:
             raise ValueError(f'Files specified with --sizes-from must contain a CSV or JSON DataFrame with one (1)'
                              f'column. Found {len(specified_items)} columns instead.')
@@ -100,12 +125,20 @@ def get_sizes_from(sizes_from: str) -> list:
 
 
 def write_report(r: pd.DataFrame, report: str):
+    """
+    Args:
+
+    Returns:
+
+    Raises:
+    """
     if ".json" in report.lower():
         r.to_json(report, orient="records")
     elif report == '-':
         r.to_csv(sys.stdout, index=False)
     else:
         r.to_csv(report, index=False)
+
 
 @click.command()
 @click.argument('partitioner_types', type=str, required=True)
@@ -126,6 +159,12 @@ def cli(partitioner_types, item_spec, bucket_spec, iterations, size_spec,
 
     It uses random data, and so may not be an accurate benchmark for algorithms whose performance depends on
     the data set.
+
+    Args:
+
+    Returns:
+
+    Raises:
 
     """
     #cuda.select_device(0)
@@ -158,6 +197,7 @@ def cli(partitioner_types, item_spec, bucket_spec, iterations, size_spec,
 
     if report is not None:
         write_report(r, report)
+
 
 if __name__ == '__main__':
     cli(sys.argv[1:])
