@@ -12,6 +12,7 @@ from histoptimizer.cuda_common import add_debug_info, reconstruct_partition
 # thread.
 
 name = 'cuda_3'
+
 needs_precompile = True
 
 threads_per_item_pair = 8
@@ -20,7 +21,7 @@ threads_per_block = threads_per_item_pair * item_pairs_per_block
 
 
 @cuda.jit
-def init_items_kernel(min_cost, prefix_sum): # pragma: no cover
+def _init_items_kernel(min_cost, prefix_sum):  # pragma: no cover
     thread_idx = cuda.threadIdx.x
     block_idx = cuda.blockIdx.x
     block_size = cuda.blockDim.x
@@ -30,13 +31,13 @@ def init_items_kernel(min_cost, prefix_sum): # pragma: no cover
 
 
 @cuda.jit
-def init_buckets_kernel(min_cost, item): # pragma: no cover
+def _init_buckets_kernel(min_cost, item):  # pragma: no cover
     # item is a single-element array
     bucket = cuda.grid(1) + 1
     min_cost[1, bucket] = item[1]
 
 @cuda.jit
-def cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items, bucket, mean): # pragma: no cover
+def _cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items, bucket, mean): # pragma: no cover
     """
     There is one thread for each pair of items.
     """
@@ -52,6 +53,9 @@ def cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items, buc
 
     if first_item > num_items[0] / 2:
         return
+
+    if first_item == 1:
+        min_cost[first_item, bucket[0]] = min_cost[first_item, bucket[0] - 1]
 
     if first_item > 1:
         divider = 0
@@ -137,14 +141,14 @@ def partition(items, num_buckets, debug_info=None):
     divider_location_gpu = cuda.device_array((len(items), num_buckets+1), dtype=np.int)
 
     num_blocks = math.ceil(len(items) / threads_per_block)
-    init_items_kernel[num_blocks, threads_per_block](min_cost_gpu, item_cost_gpu)
+    _init_items_kernel[num_blocks, threads_per_block](min_cost_gpu, item_cost_gpu)
     # We don't really need this, could be a special case in kernel.
-    init_buckets_kernel[1, num_buckets](min_cost_gpu, item_cost_gpu)
+    # _init_buckets_kernel[1, num_buckets](min_cost_gpu, item_cost_gpu)
 
     num_blocks = math.ceil((len(items) / 2) * threads_per_item_pair / threads_per_block)
     for bucket in range(2, num_buckets + 1):
         bucket_gpu = cuda.to_device(np.array([bucket]))
-        cuda_partition_kernel[num_blocks, threads_per_block](min_cost_gpu, divider_location_gpu, prefix_sum_gpu, num_items_gpu, bucket_gpu, mean_value_gpu)
+        _cuda_partition_kernel[num_blocks, threads_per_block](min_cost_gpu, divider_location_gpu, prefix_sum_gpu, num_items_gpu, bucket_gpu, mean_value_gpu)
 
     min_variance, partition = reconstruct_partition(items, num_buckets, min_cost_gpu, divider_location_gpu)
     add_debug_info(debug_info, divider_location_gpu, items, min_cost_gpu, prefix_sum)

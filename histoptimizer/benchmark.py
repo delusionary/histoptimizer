@@ -22,7 +22,7 @@ def partitioner_pivot(df: pd.DataFrame, partitioner: str) -> pd.DataFrame:
         df (DataFrame): Results DataFrame.
         partitioner: partitioner name to isolate.
     Returns:
-k
+
     Raises:
     """
     return df[df.partitioner == partitioner].groupby(
@@ -34,7 +34,7 @@ k
                values='elapsed_seconds')
 
 
-def benchmark(partitioner_list: list, item_list: list, bucket_list: list, iterations: int =1,
+def benchmark(partitioner_list: list, item_list: list, bucket_list: list, iterations: int = 1,
               begin_range: int = 1, end_range: int = 10, specified_items_sizes: list = None, verbose: bool = False)\
         -> pd.DataFrame:
     """
@@ -46,6 +46,7 @@ def benchmark(partitioner_list: list, item_list: list, bucket_list: list, iterat
     """
     r = pd.DataFrame(columns=('partitioner', 'num_items', 'buckets', 'iteration',
                               'variance', 'elapsed_seconds', 'dividers', 'items'))
+
     for num_items in item_list:
         for num_buckets in bucket_list:
             results = []
@@ -56,10 +57,10 @@ def benchmark(partitioner_list: list, item_list: list, bucket_list: list, iterat
                     items = specified_items_sizes[:num_items]
                 for partitioner in partitioner_list:
                     start = time.time()
-                    dividers, variance = partitioners[partitioner](items, num_buckets)
+                    dividers, variance = partitioner.partition(items, num_buckets)
                     end = time.time()
                     results.append({
-                        'partitioner': partitioner,
+                        'partitioner': partitioner.name,
                         'num_items': num_items,
                         'buckets': num_buckets,
                         'iteration': i,
@@ -86,11 +87,11 @@ def echo_tables(partitioner_list: list, r: pd.DataFrame):
 
     Raises:
     """
-    for p in partitioner_list:
-        grid = partitioner_pivot(r, p)
+    for partitioner in (p.name for p in partitioner_list):
+        grid = partitioner_pivot(r, partitioner)
         items_width = ceil(max(log10(grid.index.max()), 1)) + 2  # wide enough for the widest num_items value.
         width = ceil(max(log10(grid.max().max()), 1)) + 6  # Max decimal digits we have + ".000" + 2 spaces
-        click.echo(f'Partitioner: {p}\n{"".rjust(items_width)}' + ''.join([str(x).rjust(width) for x in grid.columns]))
+        click.echo(f'Partitioner: {partitioner}\n{"".rjust(items_width)}' + ''.join([str(x).rjust(width) for x in grid.columns]))
         for num_items in grid.index:
             click.echo(str(num_items).rjust(items_width) + ''.join(
                 [f'{float(grid[grid.index == num_items][x]):.3f}'.rjust(width) for x in grid.columns]))
@@ -170,7 +171,8 @@ def cli(partitioner_types, item_spec, bucket_spec, iterations, size_spec,
     #cuda.select_device(0)
     #cuda.profile_start()
     # Parse arguments
-    partitioner_list = partitioner_types.split(',')
+    partitioner_list = (partitioners[k] for k in partitioner_types.split(','))
+
 
     specified_items_sizes = get_sizes_from(sizes_from)
     item_variable_dict = {}
@@ -186,7 +188,7 @@ def cli(partitioner_types, item_spec, bucket_spec, iterations, size_spec,
         raise ValueError("Size spec must be two numbers separated by a dash: e.g. 1-10")
 
     if force_jit:
-        for p in {'cuda_1', 'cuda_2', 'cuda_3', 'dynamic_numba', 'dynamic_numba_2'} & set(partitioner_list):
+        for p in {'cuda', 'cuda_1', 'cuda_2', 'cuda_3', 'dynamic_numba', 'dynamic_numba_2'} & set(partitioner_list):
             partitioners[p]([1, 2, 3], 2)
 
     r = benchmark(partitioner_list, item_list, bucket_list,

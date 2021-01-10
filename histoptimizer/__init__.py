@@ -14,7 +14,7 @@ def get_partitioner_dict(*modules):
     partitioners = {}
     for m in modules:
         if name := getattr(m, 'name', None):
-            partitioners[name] = m.partition
+            partitioners[name] = m
     return partitioners
 
 

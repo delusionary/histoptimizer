@@ -5,10 +5,23 @@ import numpy as np
 import pytest
 
 import histoptimizer.benchmark as benchmark
+import histoptimizer.dynamic
+import histoptimizer.dynamic_numba
+
 
 @pytest.fixture
 def pivot_benchmark():
     return pd.read_json('pivot_benchmark.json')
+
+
+@pytest.fixture
+def specified_items_list():
+    return benchmark.get_sizes_from('sizes_only.csv')
+
+
+@pytest.fixture
+def partitioner_list():
+    return histoptimizer.dynamic, histoptimizer.dynamic_numba
 
 
 def test_main_succeeds(tmp_path):
@@ -21,6 +34,16 @@ def test_main_succeeds(tmp_path):
     filed_report = pd.read_json(str(report_file)).drop(['variance', 'elapsed_seconds'], axis=1)
     expected_report = pd.read_json('benchmark_report.json')
     assert np.array_equal(filed_report.to_numpy(), expected_report.to_numpy())
+
+
+def test_benchmark(partitioner_list, specified_items_list):
+    result = benchmark.benchmark(partitioner_list, (4, 5, 6), (3, 4),
+                                 specified_items_sizes=specified_items_list
+    result = result.drop(['elapsed_seconds', 'variance', 'items'], axis=1)
+    # Turn the dividers numpy array into a list to make it round-trip safe.
+    result['dividers'] = result['dividers'].apply(list)
+    expected_report = pd.read_json('test_benchmark_report.json')
+    assert np.array_equal(result.to_numpy(), expected_report.to_numpy())
 
 
 def test_get_sizes_from():

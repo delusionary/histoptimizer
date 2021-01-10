@@ -13,10 +13,11 @@ import histoptimizer.historical.recursive_verbose
 import histoptimizer.historical.recursive
 import histoptimizer.historical.cuda_1
 import histoptimizer.historical.cuda_2
+import histoptimizer.historical.cuda_3
 import histoptimizer.historical.dynamic_numpy
 import histoptimizer.historical.dynamic_numba_2
 import histoptimizer.historical.dynamic_numba_3
-import histoptimizer.cuda_3
+import histoptimizer.cuda
 import histoptimizer.dynamic
 import histoptimizer.dynamic_numba
 import histoptimizer.historical.enumerate_pandas
@@ -31,7 +32,8 @@ partitioners = get_partitioner_dict(
     histoptimizer.historical.dynamic_numpy,
     histoptimizer.historical.cuda_1,
     histoptimizer.historical.cuda_2,
-    histoptimizer.cuda_3,
+    histoptimizer.historical.cuda_3,
+    histoptimizer.cuda,
     histoptimizer.historical.recursive_cache,
     histoptimizer.historical.recursive_verbose,
     histoptimizer.historical.recursive
