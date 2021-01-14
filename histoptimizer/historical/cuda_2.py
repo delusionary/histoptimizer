@@ -14,6 +14,10 @@ from histoptimizer.cuda_common import add_debug_info, reconstruct_partition
 name = 'cuda_2'
 
 
+def precompile():
+    partition([1, 4, 6, 9], 3)
+
+
 @cuda.jit
 def cuda_reconstruct(divider_location, num_items, num_buckets, partitions):
     divider = num_buckets

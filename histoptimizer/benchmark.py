@@ -149,7 +149,7 @@ def write_report(r: pd.DataFrame, report: str):
 @click.argument('size_spec', type=str, default='1-10')
 @click.option('--debug-info/--no-debug-info', type=bool, default=False)
 @click.option('--force-jit/--no-force-jit', type=bool, default=True)
-@click.option('--report', type=click.Path(writable=True, allow_dash=False))
+@click.option('--report', type=click.Path(writable=True, allow_dash=True))
 @click.option('--sizes-from', type=click.Path(exists=True, allow_dash=True), default=None)
 @click.option('--tables/--no-tables', type=bool, default=False)
 @click.option('--verbose/--no-verbose', type=bool, default=False)
@@ -171,8 +171,7 @@ def cli(partitioner_types, item_spec, bucket_spec, iterations, size_spec,
     #cuda.select_device(0)
     #cuda.profile_start()
     # Parse arguments
-    partitioner_list = (partitioners[k] for k in partitioner_types.split(','))
-
+    partitioner_list = [partitioners[k] for k in partitioner_types.split(',')]
 
     specified_items_sizes = get_sizes_from(sizes_from)
     item_variable_dict = {}
@@ -188,8 +187,8 @@ def cli(partitioner_types, item_spec, bucket_spec, iterations, size_spec,
         raise ValueError("Size spec must be two numbers separated by a dash: e.g. 1-10")
 
     if force_jit:
-        for p in {'cuda', 'cuda_1', 'cuda_2', 'cuda_3', 'dynamic_numba', 'dynamic_numba_2'} & set(partitioner_list):
-            partitioners[p]([1, 2, 3], 2)
+        for p in {'cuda', 'cuda_1', 'cuda_2', 'cuda_3', 'dynamic_numba', 'dynamic_numba_2'} & {p.name for p in partitioner_list}:
+            partitioners[p].partition([1, 2, 3], 2)
 
     r = benchmark(partitioner_list, item_list, bucket_list,
                   iterations, begin_range, end_range, specified_items_sizes, verbose)

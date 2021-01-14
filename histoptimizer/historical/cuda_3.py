@@ -12,12 +12,26 @@ from histoptimizer.cuda_common import add_debug_info, reconstruct_partition
 # thread.
 
 name = 'cuda_3'
-
-needs_precompile = True
-
 threads_per_item_pair = 8
 item_pairs_per_block = 8
 threads_per_block = threads_per_item_pair * item_pairs_per_block
+
+
+def reconstruct_partition(divider_location, num_items, num_buckets):
+    if num_buckets < 2:
+        return np.array(0)
+    partitions = np.zeros((num_buckets - 1,), dtype=np.int)
+    divider = num_buckets
+    while divider > 2:
+        partitions[divider - 2] = divider_location[num_items, divider]
+        num_items = divider_location[num_items, divider]
+        divider -= 1
+    partitions[0] = divider_location[num_items, divider]
+    return partitions
+
+
+def precompile():
+    partition([1, 4, 6, 9], 3)
 
 
 @cuda.jit
@@ -150,7 +164,11 @@ def partition(items, num_buckets, debug_info=None):
         bucket_gpu = cuda.to_device(np.array([bucket]))
         _cuda_partition_kernel[num_blocks, threads_per_block](min_cost_gpu, divider_location_gpu, prefix_sum_gpu, num_items_gpu, bucket_gpu, mean_value_gpu)
 
-    min_variance, partition = reconstruct_partition(items, num_buckets, min_cost_gpu, divider_location_gpu)
-    add_debug_info(debug_info, divider_location_gpu, items, min_cost_gpu, prefix_sum)
+    min_cost = min_cost_gpu.copy_to_host()
+    divider_location = divider_location_gpu.copy_to_host()
+    partition = reconstruct_partition(divider_location, len(items) - 1, num_buckets)
 
-    return partition, min_variance
+    #min_variance, partition = reconstruct_partition(items, num_buckets, min_cost_gpu, divider_location_gpu)
+    #add_debug_info(debug_info, divider_location_gpu, items, min_cost_gpu, prefix_sum)
+
+    return partition, min_cost[len(items) - 1, num_buckets] / num_buckets

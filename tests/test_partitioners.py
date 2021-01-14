@@ -31,7 +31,7 @@ def expected_results():
 @pytest.mark.parametrize("partitioner", optimal_partitioners)
 def test_static_correctness(expected_results, partitioner):
     for test in expected_results:
-        dividers, variance = partitioners[partitioner](test['items'], test['buckets'])
+        dividers, variance = partitioners[partitioner].partition(test['items'], test['buckets'])
         test['variance'] = variance
         print(f"Items: {test['items']} Buckets: {test['buckets']}")
         assert any([list(dividers) == d for d in test['dividers']])
@@ -50,7 +50,7 @@ def run_all_partitioners(items, num_buckets, exclude=[], include=None):
     for partitioner_type in set(include) - set(exclude):
         debug_info = {}
         start = time.time()
-        dividers, variance = partitioners[partitioner_type](items, num_buckets, debug_info=debug_info)
+        dividers, variance = partitioners[partitioner_type].partition(items, num_buckets, debug_info=debug_info)
         partitions = get_partition_sums(dividers, items)
         end = time.time()
         results.update({
@@ -70,9 +70,9 @@ def test_random_data():
     """
 
     # Run the CUDA partitioner to pre-compile the kernels.
-    m = partitioners['cuda_1']([1, 4, 6, 9], 3)
-    m = partitioners['cuda_2']([1, 4, 6, 9], 3)
-    m = partitioners['cuda_3']([1, 4, 6, 9], 3)
+    m = partitioners['cuda_1'].partition([1, 4, 6, 9], 3)
+    m = partitioners['cuda_2'].partition([1, 4, 6, 9], 3)
+    m = partitioners['cuda_3'].partition([1, 4, 6, 9], 3)
 
     results = []
     num_iterations = 1
@@ -115,7 +115,7 @@ def test_single_test():
     for p in ('dynamic_numba', 'dynamic_numba_3'):
         debug_info[p] = {}
         start = time.time()
-        dividers[p], variance[p] = partitioners[p](items, 3, debug_info=debug_info[p])
+        dividers[p], variance[p] = partitioners[p].partition(items, 3, debug_info=debug_info[p])
         end = time.time()
         elapsed_seconds[p] = end - start
 

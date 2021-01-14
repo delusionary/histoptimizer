@@ -13,7 +13,9 @@ from histoptimizer.cuda_common import add_debug_info, reconstruct_partition
 
 name = 'cuda'
 
-needs_precompile = True
+
+def precompile():
+    partition([1, 4, 6, 9], 3)
 
 threads_per_item_pair = 8
 item_pairs_per_block = 8

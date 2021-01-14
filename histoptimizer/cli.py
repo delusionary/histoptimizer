@@ -130,13 +130,8 @@ def cli(file, id_column, size_column, partitions, limit, ascending,
 
     bucket_list = parse_set_spec(partitions)
 
-    data, partition_columns = histoptimize(data, size_column, bucket_list, column_prefix, partitioners[implementation])
-
-    # for num_buckets in bucket_list:
-    #     start = time()
-    #     data[f'{column_prefix}{num_buckets}'] = histoptimize(data, size_column, num_buckets, column_prefix, implementation)
-    #     end = time()
-    #     click.echo(f"Executed in {end-start} seconds.", err=True)
+    data, partition_columns = histoptimize(data, size_column, bucket_list, column_prefix,
+                                           partitioners[implementation].partition)
 
     if not print_all:
         data = data[[c for c in [id_column, sort_key, size_column] if c is not None] + partition_columns]

@@ -1,5 +1,7 @@
 import math
 
+# import os; os.environ['NUMBA_ENABLE_CUDASIM'] = '1'
+
 from numba import cuda
 import numpy as np
 
@@ -7,7 +9,9 @@ from histoptimizer.cuda_common import add_debug_info, reconstruct_partition
 
 name = 'cuda_1'
 
-# import os; os.environ['NUMBA_ENABLE_CUDASIM'] = '1'
+
+def precompile():
+    partition([1, 4, 6, 9], 3)
 
 
 @cuda.jit

@@ -5,6 +5,8 @@ from histoptimizer import get_prefix_sums, partitioner
 
 name = 'dynamic_numba'
 
+def precompile():
+    partition([1, 4, 6, 9], 3)
 
 # noinspection DuplicatedCode
 def reconstruct_partition(divider_location, num_items, num_buckets):

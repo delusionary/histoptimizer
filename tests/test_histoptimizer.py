@@ -29,7 +29,7 @@ def test_get_partitioner_dict(monkeypatch):
     )
 
     for p in partitioners:
-        assert p == eval(f'{partitioners[p].__module__}.name')
+        assert p == partitioners[p].name
 
 
 def test_cuda_supported():

@@ -9,6 +9,8 @@ standard deviation of the sums of a specified size column.
 This can be useful when dividing a set of ordered measurements into approximately equal groups for analysis or 
 visualization.
 
+JIT compilation and GPU support through Numba provide great speed improvements on supported hardware.
+
 The use case that motivated its creation was: Taking a list of the ~3117 counties in the U.S., ordering them by some
 attribute (voting averages, population density, median age, etc.), and then distributing them into a number of buckets
 of approximately equal population. 

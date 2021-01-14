@@ -21,7 +21,7 @@ def specified_items_list():
 
 @pytest.fixture
 def partitioner_list():
-    return histoptimizer.dynamic, histoptimizer.dynamic_numba
+    return [histoptimizer.dynamic, histoptimizer.dynamic_numba]
 
 
 def test_main_succeeds(tmp_path):
@@ -31,14 +31,14 @@ def test_main_succeeds(tmp_path):
     result = runner.invoke(benchmark.cli, ['--sizes-from', 'sizes_only.csv',
                                            '--report', str(report_file),
                                            'dynamic_numba,dynamic', '5-6', '3-4', '1'])
-    filed_report = pd.read_json(str(report_file)).drop(['variance', 'elapsed_seconds'], axis=1)
+    filed_report = pd.read_json(str(report_file), orient='records').drop(['variance', 'elapsed_seconds'], axis=1)
     expected_report = pd.read_json('benchmark_report.json')
     assert np.array_equal(filed_report.to_numpy(), expected_report.to_numpy())
 
 
 def test_benchmark(partitioner_list, specified_items_list):
     result = benchmark.benchmark(partitioner_list, (4, 5, 6), (3, 4),
-                                 specified_items_sizes=specified_items_list
+                                 specified_items_sizes=specified_items_list)
     result = result.drop(['elapsed_seconds', 'variance', 'items'], axis=1)
     # Turn the dividers numpy array into a list to make it round-trip safe.
     result['dividers'] = result['dividers'].apply(list)
@@ -68,8 +68,8 @@ def test_partitioner_pivot(pivot_benchmark):
     assert np.array_equal(expected_dynamic_numba.to_numpy(), pivot.to_numpy())
 
 
-def test_echo_tables(pivot_benchmark, capsys):
-    benchmark.echo_tables(('dynamic', 'dynamic_numba'), pivot_benchmark)
+def test_echo_tables(pivot_benchmark, partitioner_list, capsys):
+    benchmark.echo_tables(partitioner_list, pivot_benchmark)
     out, err = capsys.readouterr()
     expected = Path('echo_table_output.txt').read_text()
     assert out == expected
