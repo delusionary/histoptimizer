@@ -6,10 +6,20 @@ import click
 import numpy as np
 import pandas as pd
 from math import ceil, log10
+import platform
 
 from histoptimizer.cli import partitioners, parse_set_spec
 
 #  os.environ['NSIGHT_CUDA_DEBUGGER'] = '1'
+
+
+def get_system_info() -> dict:
+    system = {
+        'system': platform.system()
+    }
+
+    return system
+
 
 
 def partitioner_pivot(df: pd.DataFrame, partitioner: str) -> pd.DataFrame:

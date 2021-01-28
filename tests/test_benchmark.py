@@ -75,4 +75,9 @@ def test_echo_tables(pivot_benchmark, partitioner_list, capsys):
     assert out == expected
 
 
+def test_get_system_info():
+    result = benchmark.get_system_info()
+    assert False
+
+
 

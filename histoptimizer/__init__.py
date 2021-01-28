@@ -70,7 +70,7 @@ def get_prefix_sums(items):
 
 def bucket_generator(dividers: np.array, num_items: int):
     """
-    Iterate over a list of partitions, converting it into bucket numbers for each item in the
+    Iterate over a list of partitions to create a series of bucket numbers for each item in the
     partitioned series.
 
     Args:
@@ -102,7 +102,7 @@ def bucket_generator(dividers: np.array, num_items: int):
             yield bucket
 
 
-def get_partition_series(data: pd.DataFrame, sizes: str, buckets: int, partitioner):
+def get_partition_series(sizes: pd.Series, buckets: int, partitioner):
     """
     Takes a Pandas DataFrame and returns a Series that distributes rows sequentially into the given
     number of buckets with the minimum possible standard deviation.
@@ -116,7 +116,7 @@ def get_partition_series(data: pd.DataFrame, sizes: str, buckets: int, partition
     Returns:
         pandas.Series: Series thing.
     """
-    items = data[[sizes]].astype('float32').to_numpy(dtype=np.float32)
+    items = sizes.astype('float32').to_numpy(dtype=np.float32)
     partitions, variance = partitioner(items, buckets)
     return pd.Series((b for b in bucket_generator(partitions, len(items))))
 

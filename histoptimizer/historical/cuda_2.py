@@ -17,17 +17,6 @@ name = 'cuda_2'
 def precompile():
     partition([1, 4, 6, 9], 3)
 
-
-@cuda.jit
-def cuda_reconstruct(divider_location, num_items, num_buckets, partitions):
-    divider = num_buckets
-    while divider > 2:
-        partitions[divider - 2] = divider_location[num_items, divider]
-        num_items = divider_location[num_items, divider]
-        divider -= 1
-    partitions[0] = divider_location[num_items, divider]
-
-
 @cuda.jit
 def init_items_kernel(min_cost, prefix_sum):
     thread_idx = cuda.threadIdx.x
