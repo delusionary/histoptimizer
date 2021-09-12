@@ -1,3 +1,7 @@
+"""
+dynamic_numpy is a single-threaded implementation of Skiena's dynamic programming algorithm for solving the linear
+partition problem.
+"""
 import numpy as np
 from numpy import vectorize
 from histoptimizer import get_prefix_sums, partitioner

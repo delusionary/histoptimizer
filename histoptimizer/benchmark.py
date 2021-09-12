@@ -48,9 +48,33 @@ def benchmark(partitioner_list: list, item_list: list, bucket_list: list, iterat
               begin_range: int = 1, end_range: int = 10, specified_items_sizes: list = None, verbose: bool = False)\
         -> pd.DataFrame:
     """
+    Benchmark runs a given list of partitioners against the same data, and records the results and timing.
+
+    The caller can specify that the partitioners be 
+
     Args:
+        partitioner_list: List of partitioner functions to benchmark.
+        item_list: A list of item counts to benchmark.
+        bucket_list: A list bucket counts to benchmark.
+        iterations: Number of iterations to test each item_list x bucket_list combination.
+        begin_range: For random item generation, the lower bound of the random size values.
+        end_range: For random item generation, the upper bound of the random size values.
+        specified_items_sizes: An ordered list of item sizes. Must be as long as the max value of item_list.
+        verbose: If true, log debugging information.
 
     Returns:
+        pandas.DataFrame: DataFrame containing one row for each partitioner x item size x bucket size x iteration.
+
+        Each row contains the following columns:
+
+            partitioner (str): Name of the partitioner used in this run.
+            num_items: Number of items in this run.
+            buckets: Number of buckets in this run.
+            iteration: Iteration number for this run.
+            variance: Variance of the discovered solution.
+            elapsed_seconds: Number of seconds to find the solution.
+            dividers (list): Divider locations for the optimal solution.
+            items: List of items sizes for this run.
 
     Raises:
     """

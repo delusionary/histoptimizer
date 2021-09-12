@@ -15,6 +15,8 @@ minimized.
 import numpy as np
 import histoptimizer
 
+from numba import jit, float32, int32, void
+
 name = 'recursive_numba'
 
 
