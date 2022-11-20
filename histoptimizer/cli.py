@@ -1,3 +1,28 @@
+"""CLI wrapper for Histoptimizer functionality.
+
+The CLI module provides `cli`, a Click-based script function that
+provides the user the ability to partition an ordered set of
+JSON or CSV data items into a set of "buckets" such that the variance
+of the bucket sizes is minimized. Each data item must specify a size.
+
+
+Todo:
+
+Copyright (C) 2022 by Kelly Joyner (de@lusion.org)
+
+Permission to use, copy, modify, and/or distribute this software for any purpose
+with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+THIS SOFTWARE.
+"""
+
+
 import click
 import pandas
 from time import time

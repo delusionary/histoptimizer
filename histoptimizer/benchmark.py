@@ -1,3 +1,6 @@
+"""
+Implements the benchmark harness CLI.
+"""
 import re
 import sys
 import time
@@ -14,6 +17,9 @@ from histoptimizer.cli import partitioners, parse_set_spec
 
 
 def get_system_info() -> dict:
+    """
+
+    """
     system = {
         'system': platform.system()
     }
@@ -50,7 +56,7 @@ def benchmark(partitioner_list: list, item_list: list, bucket_list: list, iterat
     """
     Benchmark runs a given list of partitioners against the same data, and records the results and timing.
 
-    The caller can specify that the partitioners be 
+    The caller can specify that the partitioners be
 
     Args:
         partitioner_list: List of partitioner functions to benchmark.
@@ -115,8 +121,11 @@ def benchmark(partitioner_list: list, item_list: list, bucket_list: list, iterat
 
 def echo_tables(partitioner_list: list, r: pd.DataFrame):
     """
-    Args:
+    Output (via click.echo) a table of results for the given partitioner.
 
+    Args:
+        partitioner_list: List of partitioners to generate output for.
+        r: A DataFrame of results produced by the benchmark function.
     Returns:
 
     Raises:
@@ -134,11 +143,16 @@ def echo_tables(partitioner_list: list, r: pd.DataFrame):
 
 def get_sizes_from(file_path: str) -> np.ndarray:
     """
+    Read sizes from the given file path.
+
     Args:
+        file_path: Path to a CSV file with one column, or a JSON file where each object has one attribute. The values
+            in the field must be castable to floats.
 
     Returns:
-
+        A list of item sizes in the same order as read from the file.
     Raises:
+        ValueError if the file does not contain CSV with a single column or a JSON dataframe with a single attribute.
     """
     specified_items_sizes = None
     if file_path is not None:
@@ -161,11 +175,15 @@ def get_sizes_from(file_path: str) -> np.ndarray:
 
 def write_report(r: pd.DataFrame, report: str):
     """
+    Write the given results DataFrame to the given file. If the filename ends in '.json', JSON is generated, otherwise
+    CSV. The special value '-' can be used to write the results to stdout.
     Args:
-
+        r: Results DataFrame
+        report: Path to report file.
     Returns:
-
+        Nothing
     Raises:
+        IOError if the file cannot be opened for writing.
     """
     if ".json" in report.lower():
         r.to_json(report, orient="records")
@@ -192,8 +210,8 @@ def cli(partitioner_types, item_spec, bucket_spec, iterations, size_spec,
     """
     Histobench is a benchmarking harness for testing Histoptimizer partitioner performance.
 
-    It uses random data, and so may not be an accurate benchmark for algorithms whose performance depends on
-    the data set.
+    By Default it uses random data, and so may not be an accurate benchmark for algorithms whose performance
+    depends upon the data set.
 
     Args:
 
