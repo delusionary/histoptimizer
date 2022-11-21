@@ -6,7 +6,7 @@ import pytest
 
 import histoptimizer.benchmark as benchmark
 import histoptimizer.dynamic
-import histoptimizer.dynamic_numba
+import histoptimizer.numba
 
 
 @pytest.fixture

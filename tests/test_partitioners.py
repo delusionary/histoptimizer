@@ -9,17 +9,25 @@ from histoptimizer.cli import partitioners
 
 from histoptimizer import get_partition_sums
 
+from histoptimizer import Histoptimizer, OldHistoptimizer
+from histoptimizer.numba import NumbaOptimizer
+from histoptimizer.cuda import CUDAOptimizer
+
 optimal_partitioners = (
-    "dynamic",
-    "dynamic_numba",
-    "cuda_1",
-    "cuda_2",
-    "cuda_3",
-    "enumerate",
-    "enumerate_pandas",
-    "recursive",
-    "recursive_cache",
-    "recursive_verbose",
+    OldHistoptimizer,
+    Histoptimizer,
+    NumbaOptimizer,
+    CUDAOptimizer,
+    # "dynamic",
+    # "dynamic_numba",
+    # "cuda_1",
+    # "cuda_2",
+    # "cuda_3",
+    # "enumerate",
+    # "enumerate_pandas",
+    # "recursive",
+    # "recursive_cache",
+    # "recursive_verbose",
 )
 
 @pytest.fixture()
@@ -31,9 +39,8 @@ def expected_results():
 @pytest.mark.parametrize("partitioner", optimal_partitioners)
 def test_static_correctness(expected_results, partitioner):
     for test in expected_results:
-        dividers, variance = partitioners[partitioner].partition(test['items'], test['buckets'])
+        dividers, variance = partitioner.partition(test['items'], test['buckets'])
         test['variance'] = variance
-        print(f"Items: {test['items']} Buckets: {test['buckets']}")
         assert any([list(dividers) == d for d in test['dividers']])
         assert isclose(variance, test['variance'], rel_tol=1e-04)
     pass
@@ -63,6 +70,7 @@ def run_all_partitioners(items, num_buckets, exclude=[], include=None):
         })
 
     return results
+
 
 def test_random_data():
     """
@@ -111,16 +119,18 @@ def test_single_test():
     dividers = {}
     variance = {}
     elapsed_seconds = {}
-    items = [5, 1, 6, 8, 5]
-    for p in ('dynamic_numba', 'dynamic_numba_3'):
+    items = [10, 8, 3, 5, 2]
+    num_buckets = 4
+    for p in (OldHistoptimizer, Histoptimizer):
         debug_info[p] = {}
         start = time.time()
-        dividers[p], variance[p] = partitioners[p].partition(items, 3, debug_info=debug_info[p])
+        dividers[p], variance[p] = p.partition(items, num_buckets, debug_info=debug_info[p])
         end = time.time()
         elapsed_seconds[p] = end - start
 
     # Ensure the dividers returned are all the same.
-    some_dividers = list(dividers[next(iter(dividers))])
-    assert all([list(dividers[d]) == some_dividers for d in dividers])
+    #some_dividers = list(dividers[next(iter(dividers))])
+    #assert all([list(dividers[d]) == some_dividers for d in dividers])
+
 
 

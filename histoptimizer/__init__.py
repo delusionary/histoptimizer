@@ -7,7 +7,15 @@ class Histoptimizer(object):
     """
 
     @classmethod
-    def _reconstruct_partition(cls, divider_location, num_items, num_buckets):
+    def reconstruct_partition(cls, divider_location, num_items, num_buckets):
+        """
+        Arguments:
+            divider_location
+                A matrix giving the
+            num_items
+                The number of items to be partitioned
+            num_buckets
+        """
         if num_buckets < 2:
             return np.array(0)
         partitions = np.zeros((num_buckets - 1,), dtype=np.int)
@@ -19,21 +27,67 @@ class Histoptimizer(object):
         partitions[0] = divider_location[num_items, divider]
         return partitions
 
-    # noinspection DuplicatedCode
     @classmethod
-    def _build_matrices(cls, buckets, prefix_sum):
+    def get_prefix_sums(cls, items):
+        """
+        Given a list of item sizes, return a NumPy float32 array where the first item is 0.0 and subsequent items are the
+        cumulative sum of the elements of the list.
+
+        Args:
+            items (iterable): A list of item sizes, integer or float.
+
+        Returns:
+            NumPy float32 array containing a [0]-prefixed cumulative sum.
+        """
+        prefix_sum = np.zeros((len(items) + 1), dtype=np.float32)
+        prefix_sum[1:] = np.cumsum(items)
+        return prefix_sum
+
+    @classmethod
+    def init_matrices(cls, num_buckets, prefix_sum):
         n = len(prefix_sum)
-        min_cost = np.zeros((n, buckets + 1), dtype=np.float32)
-        divider_location = np.zeros((n, buckets + 1), dtype=np.int32)
-        mean = prefix_sum[-1] / buckets
+        min_cost = np.zeros((n, num_buckets + 1), dtype=np.float32)
+        divider_location = np.zeros((n, num_buckets + 1), dtype=np.int32)
+        mean = prefix_sum[-1] / num_buckets
         for item in range(1, len(prefix_sum)):
-            # min_cost[item, 1] = prefix_sum[item]
             min_cost[item, 1] = (prefix_sum[item] - mean) ** 2
-        for bucket in range(1, buckets + 1):
+        for bucket in range(1, num_buckets + 1):
             min_cost[1, bucket] = (prefix_sum[1] - mean) ** 2
-        for bucket in range(2, buckets + 1):
+        return min_cost, divider_location
+
+    @classmethod
+    def build_matrices(cls, min_cost, divider_location,
+                       num_buckets, prefix_sum):
+        """Compute min cost and divider location matrices.
+
+        These matrices encode a full set of intermediate results that
+        can be used to identify an optimal division of an ordered set of sized
+        items in num_buckets partitions, such that the variance over the total
+        size of each partition is minimized.
+
+        Arguments:
+            num_buckets
+                Number of buckets to distribute the items into.
+            prefix_sum
+                List of sums such that prefix_sum[n] = sum(1..n) of item sizes.
+                This representation is more efficient than storing the item
+                sizes themselves, since only this sum is needed.
+        Returns:
+            min_cost
+                Matrix giving, For a given [item, divider] combination, the
+                minimum achievable variance for placing [divider-1] dividers
+                between elements 1..item.
+            divider_location
+                Last [divider-1] divider location that achieves the matching
+                lowest cost in min_cost.
+
+        """
+        n = len(prefix_sum)
+        mean = prefix_sum[-1] / num_buckets
+
+        for bucket in range(2, num_buckets + 1):
             for item in range(2, len(prefix_sum)):
-                # evaluate main recurrence
+                # evaluate main recurrence relation.
                 min_cost_temp = np.inf
                 divider_location_temp = 0
                 for previous_item in range(bucket - 1, item):
@@ -50,30 +104,72 @@ class Histoptimizer(object):
 
         return min_cost, divider_location
 
+
+    @classmethod
+    def precompile(cls):
+        """Precompile any accelerator code used by this class.
+
+        Some implementations of the Histoptimizer API rely on the compilation
+        of python code to GPU or SIMD machine code. For these implementations,
+        `precompile` will run a trivial problem set in order to trigger JIT
+        compilation.
+
+        For the default implementation, this is a no-op.
+        """
+        pass
+
     # noinspection DuplicatedCode
     @classmethod
-    def partition(cls, items, buckets, debug_info=None):
-        num_items = len(items)
-        padded_items = [0]
-        padded_items.extend(items)
-        items = padded_items
+    def partition(cls, item_sizes, num_buckets: int, debug_info: dict = None
+                  ) -> list:
+        """Given a list of item sizes, partition the items into buckets evenly.
 
-        prefix_sum = np.zeros((num_items + 1), dtype=np.float32)
-        # Cache cumulative sums
-        for item in range(1, num_items + 1):
-            prefix_sum[item] = prefix_sum[item - 1] + items[item]
+        This function returns a set of partition indexes, or divider locations,
+        such that dividing the given ordered set of items into "buckets" at
+        these indexes results in a set of buckets with the lowest possible
+        variance over the sum of the items sizes in each bucket.
 
-        (min_cost, divider_location) = cls._build_matrices(buckets, prefix_sum)
+        The base implementation is a staightforward linear implementation
+        of Skiena's dynamic programming algorithm for the linear partition
+        problem, with a modified cost function.
+
+        See: _The Algorithm Design Manual_, S. Skiena. Springer, London, 2008
+
+        Arguments:
+            item_sizes: An iterable of float- or float-compatible values
+                        representing a sorted series of item sizes.
+            num_buckets: The number of buckets to partition the items into.
+            debug_info: A dictionary that can accept debug information.
+
+        Returns:
+            partition_locations: Index of dividers within items. Dividers come
+                after the item in 0-based indexing and before the item in
+                1-based indexing.
+            min_variance: The variance of the solution defined by
+                `partition_locations`
+        """
+        num_items = len(item_sizes)
+        #padded_items = [0]
+        #padded_items.extend(item_sizes)
+        #item_sizes = padded_items
+
+        prefix_sum = cls.get_prefix_sums(item_sizes)
+
+        (min_cost, divider_locs) = cls.init_matrices(num_buckets, prefix_sum)
+        (min_cost, divider_locs) = cls.build_matrices(min_cost,
+                                                      divider_locs,
+                                                      num_buckets,
+                                                      prefix_sum)
 
         if debug_info is not None:
-            debug_info['items'] = items
+            debug_info['items'] = item_sizes
             debug_info['prefix_sum'] = prefix_sum
             debug_info['min_cost'] = min_cost
-            debug_info['divider_location'] = divider_location
+            debug_info['divider_locs'] = divider_locs
 
-        partition = cls._reconstruct_partition(divider_location, num_items,
-                                               buckets)
-        return partition, min_cost[num_items, buckets] / buckets
+        partition = cls.reconstruct_partition(divider_locs, num_items,
+                                               num_buckets)
+        return partition, min_cost[num_items, num_buckets] / num_buckets
 
 
 def get_partitioner_dict(*modules):
@@ -124,22 +220,6 @@ def get_partition_sums(dividers, items):
         for y in range(left_index, right_index):
             partitions[x] += items[y]
     return partitions
-
-
-def get_prefix_sums(items):
-    """
-    Given a list of item sizes, return a NumPy float32 array where the first item is 0.0 and subsequent items are the
-    cumulative sum of the elements of the list.
-
-    Args:
-        items (iterable): A list of item sizes, integer or float.
-
-    Returns:
-        NumPy float32 array containing a [0]-prefixed cumulative sum.
-    """
-    prefix_sum = np.zeros((len(items) + 1), dtype=np.float32)
-    prefix_sum[1:] = np.cumsum(items)
-    return prefix_sum
 
 
 def bucket_generator(dividers: np.array, num_items: int):
@@ -253,13 +333,133 @@ def partitioner(partitioner_func):
         try:
             num_items = len(items)
         except TypeError:
-            raise ValueError("items must be a container")
+            raise ValueError("Items must be a container.")
         if num_items < 3:
-            raise ValueError("Must have at least 3 items to have a choice of partition location")
+            raise ValueError("Must have at least 3 items.")
         if buckets < 2:
-            raise ValueError("Must request at least two buckets")
+            raise ValueError("Must request at least two buckets.")
         if buckets > num_items:
-            raise ValueError("Cannot have more buckets than items")
+            raise ValueError("Cannot have more buckets than items.")
         return partitioner_func(items, buckets, debug_info)
 
     return checked_partitioner
+
+
+def get_prefix_sums(cls, items):
+    """
+    Given a list of item sizes, return a NumPy float32 array where the first item is 0.0 and subsequent items are the
+    cumulative sum of the elements of the list.
+
+    Args:
+        items (iterable): A list of item sizes, integer or float.
+
+    Returns:
+        NumPy float32 array containing a [0]-prefixed cumulative sum.
+    """
+    prefix_sum = np.zeros((len(items) + 1), dtype=np.float32)
+    prefix_sum[1:] = np.cumsum(items)
+    return prefix_sum
+
+
+class OldHistoptimizer(object):
+    """Base class for objects implementing the Histoptimizer API.
+
+    """
+
+    @classmethod
+    def _reconstruct_partition(cls, divider_location, num_items, num_buckets):
+        if num_buckets < 2:
+            return np.array(0)
+        partitions = np.zeros((num_buckets - 1,), dtype=np.int)
+        divider = num_buckets
+        while divider > 2:
+            partitions[divider - 2] = divider_location[num_items, divider]
+            num_items = divider_location[num_items, divider]
+            divider -= 1
+        partitions[0] = divider_location[num_items, divider]
+        return partitions
+
+    # noinspection DuplicatedCode
+    @classmethod
+    def _build_matrices(cls, buckets, prefix_sum):
+        n = len(prefix_sum)
+        min_cost = np.zeros((n, buckets + 1), dtype=np.float32)
+        divider_location = np.zeros((n, buckets + 1), dtype=np.int32)
+        mean = prefix_sum[-1] / buckets
+        for item in range(1, len(prefix_sum)):
+            # min_cost[item, 1] = prefix_sum[item]
+            min_cost[item, 1] = (prefix_sum[item] - mean) ** 2
+        for bucket in range(1, buckets + 1):
+            min_cost[1, bucket] = (prefix_sum[1] - mean) ** 2
+        for bucket in range(2, buckets + 1):
+            for item in range(2, len(prefix_sum)):
+                # evaluate main recurrence
+                min_cost_temp = np.inf
+                divider_location_temp = 0
+                for previous_item in range(bucket - 1, item):
+                    cost = min_cost[previous_item, bucket - 1] + \
+                           (
+                                   (prefix_sum[item] - prefix_sum[
+                                       previous_item]) - mean
+                           ) ** 2
+
+                    if cost < min_cost_temp:
+                        min_cost_temp = cost
+                        divider_location_temp = previous_item
+                min_cost[item, bucket] = min_cost_temp
+                divider_location[item, bucket] = divider_location_temp
+
+        return min_cost, divider_location
+
+    @classmethod
+    def precompile(cls):
+        """Precompile any accelerator code used by this class.
+
+        Some implementations of the Histoptimizer API rely on the compilation
+        of python code to GPU or SIMD machine code. For these implementations,
+        `precompile` will run a trivial problem set in order to trigger JIT
+        compilation.
+
+        For the default implementation, this is a no-op.
+        """
+        pass
+
+    # noinspection DuplicatedCode
+    @classmethod
+    def partition(cls, item_sizes, buckets, debug_info=None):
+        """Given a list of item sizes, partition the items into buckets evenly.
+
+        The list of
+         Skiena's dynamic programming algorithm for the linear partition problem.
+
+        Arguments:
+            item_sizes: An ordered list of item sizes.
+            num_buckets: The number of buckets to partition the items into.
+            debug_info: A dictionary that can accept debug information.
+
+        Returns:
+            partition_locations: Index of dividers within items. Dividers come after the item in 0-based indexing and
+            before the item in 1-based indexing.
+            min_variance: The variance of the solution defined by partition_locations
+        """
+        num_items = len(item_sizes)
+        padded_items = [0]
+        padded_items.extend(item_sizes)
+        item_sizes = padded_items
+
+        prefix_sum = np.zeros((num_items + 1), dtype=np.float32)
+        # Cache cumulative sums
+        for item in range(1, num_items + 1):
+            prefix_sum[item] = prefix_sum[item - 1] + item_sizes[item]
+
+        (min_cost, divider_location) = cls._build_matrices(buckets, prefix_sum)
+
+        if debug_info is not None:
+            debug_info['items'] = item_sizes
+            debug_info['prefix_sum'] = prefix_sum
+            debug_info['min_cost'] = min_cost
+            debug_info['divider_location'] = divider_location
+
+        partition = cls._reconstruct_partition(divider_location, num_items,
+                                               buckets)
+        return partition, min_cost[num_items, buckets] / buckets

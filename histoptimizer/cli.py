@@ -44,14 +44,14 @@ import histoptimizer.historical.dynamic_numba_2
 import histoptimizer.historical.dynamic_numba_3
 import histoptimizer.cuda
 import histoptimizer.dynamic
-import histoptimizer.dynamic_numba
+import histoptimizer.numba
 import histoptimizer.historical.enumerate_pandas
 
 partitioners = get_partitioner_dict(
     histoptimizer.historical.enumerate_pandas,
     histoptimizer.historical.enumerate,
     histoptimizer.dynamic,
-    histoptimizer.dynamic_numba,
+    histoptimizer.numba,
     histoptimizer.historical.dynamic_numba_2,
     histoptimizer.historical.dynamic_numba_3,
     histoptimizer.historical.dynamic_numpy,

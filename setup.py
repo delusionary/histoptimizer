@@ -27,6 +27,7 @@ setup(
     ],
     install_requires=[
         'click',
+        'cuda-python',
         'numba',
         'numpy',
         'pandas',
