@@ -12,9 +12,7 @@ from histoptimizer import Histoptimizer
     target='cpu'
 )
 def build_matrices(bucket_list, buckets, prefix_sum, min_cost, divider_location):
-    n = len(prefix_sum)
-    # min_cost = np.zeros((n, buckets + 1), dtype=np.float32)
-    # divider_location = np.zeros((n, buckets + 1), dtype=np.int32)
+
     mean = prefix_sum[-1] / buckets
     for item in range(1, len(prefix_sum)):
         # min_cost[item, 1] = prefix_sum[item]
@@ -23,11 +21,8 @@ def build_matrices(bucket_list, buckets, prefix_sum, min_cost, divider_location)
     mean = prefix_sum[-1] / (min_cost.shape[1] - 1)
 
     for bucket in range(2, min_cost.shape[1]):
-        # min_cost[:, bucket], divider_location[:, bucket] = get_min_cost(bucket, prefix_sum, min_cost[:, bucket-1], mean)
         min_cost[0, bucket] = min_cost[0, bucket - 1]
         min_cost[1, bucket] = min_cost[0, bucket - 1]
-        # current_row_dividers[0] = 0
-        # current_row_dividers[1] = 0
         for item in prange(2, len(prefix_sum)):
             min_cost_tmp = np.inf
             divider_location_tmp = 0
@@ -38,8 +33,6 @@ def build_matrices(bucket_list, buckets, prefix_sum, min_cost, divider_location)
                     divider_location_tmp = previous_item
             min_cost[item, bucket] = min_cost_tmp
             divider_location[item, bucket] = divider_location_tmp
-            # current_row_cost[item] = min_cost
-            # current_row_dividers[item] = divider_location
 
 
 class NumbaOptimizerDraft2(Histoptimizer):
@@ -67,7 +60,7 @@ class NumbaOptimizerDraft2(Histoptimizer):
         prefix_sum = cls.get_prefix_sums(items)
 
         #min_cost, divider_location = init_matrices(buckets, prefix_sum)
-        bucket_list = np.zeros((buckets + 1), dtype=np.int32)
+        bucket_list = np.zeros((buckets + 1), dtype=int)
         min_cost, divider_location = build_matrices(bucket_list, buckets, prefix_sum)
 
         if debug_info is not None:

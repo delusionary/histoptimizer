@@ -76,7 +76,7 @@ class CUDAOptimizerBuckets(CUDAOptimizer):
         mean_value_gpu = cuda.to_device(np.array([mean_bucket_sum], dtype=np.float32))
         item_cost_gpu = cuda.to_device(item_cost)
         min_cost_gpu = cuda.device_array((len(items), num_buckets+1))
-        divider_location_gpu = cuda.device_array((len(items), num_buckets+1), dtype=np.int)
+        divider_location_gpu = cuda.device_array((len(items), num_buckets+1), dtype=np.int32)
 
         threads_per_block = 256
         num_blocks = math.ceil(len(items) / threads_per_block)

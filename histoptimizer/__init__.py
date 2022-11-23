@@ -37,7 +37,7 @@ class Histoptimizer(object):
         """
         if num_buckets < 2:
             return np.array(0)
-        partitions = np.zeros((num_buckets - 1,), dtype=np.int)
+        partitions = np.zeros((num_buckets - 1,), dtype=int)
         divider = num_buckets
         while divider > 2:
             partitions[divider - 2] = divider_location[num_items, divider]

@@ -104,7 +104,7 @@ def test_get_partition_sums():
 
 
 def test_bucket_generator():
-    dividers = np.array([1, 3, 5], dtype=np.int)
+    dividers = np.array([1, 3, 5], dtype=int)
     bucket_values = histoptimizer.bucket_generator(dividers, 7)
     assert list(bucket_values) == [1, 2, 2, 3, 3, 4, 4]
 

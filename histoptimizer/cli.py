@@ -91,7 +91,7 @@ def parse_set_spec(spec: str, substitute: dict = None) -> list:
 @click.option('-s', '--sort-key', type=str, default=None,
               help='Optionally sort records by this column name before partitioning.')
 @click.option('-t', '--timing/--no-timing', default=False, help='Print partitioner timing information to stderr')
-@click.option('-i', '--implementation', type=str, default='dynamic_numba',
+@click.option('-i', '--implementation', type=str, default='numba',
               help='Use the named partitioner implementation. Defaults to "dynamic_numba". If you have an NVidia GPU '
               'use "cuda" for better performance')
 @click.option('-o', '--output', type=click.File('w'), default=sys.stdout,
@@ -125,15 +125,14 @@ def cli(file, id_column, size_column, partitions, limit, ascending,
 
     if implementation in standard_implementations:
         partitioner = standard_implementations[implementation]
-    elif implementation in historical_implementations:
-        # Do a warning
-        partitioner = historical_implementations[implementation]
+    else:
+        raise ValueError(f'Unknown implementation {implementation}')
 
     data, partition_columns = histoptimize(data,
                                            size_column,
                                            bucket_list,
                                            column_prefix,
-                                           partitioner.partition)
+                                           partitioner)
 
     if not print_all:
         data = data[[c for c in [id_column, sort_key, size_column] if c is not None] + partition_columns]

@@ -12,8 +12,8 @@ from histoptimizer import Histoptimizer
     nopython=True,
     target='cpu'
 )
-def _get_min_cost(bucket, prefix_sum, previous_row, mean, current_row_cost,
-                 current_row_dividers):  # pragma: no cover
+def _get_min_cost(bucket, prefix_sum, previous_row, mean,
+                  current_row_cost, current_row_dividers):  # pragma: no cover
     current_row_cost[0] = previous_row[0]
     current_row_cost[1] = previous_row[1]
     current_row_dividers[0] = 0

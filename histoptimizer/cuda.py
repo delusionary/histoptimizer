@@ -192,9 +192,9 @@ class CUDAOptimizer(Histoptimizer):
     def cuda_reconstruct_partition(cls, items, num_buckets, min_cost_gpu,
                               divider_location_gpu):
         min_variance_gpu = cuda.device_array((1,), dtype=np.float32)
-        num_items_gpu = cuda.to_device(np.array([len(items) - 1], dtype=np.int))
-        num_buckets_gpu = cuda.to_device(np.array([num_buckets], dtype=np.int))
-        partition_gpu = cuda.device_array(num_buckets - 1, dtype=np.int)
+        num_items_gpu = cuda.to_device(np.array([len(items) - 1], dtype=int))
+        num_buckets_gpu = cuda.to_device(np.array([num_buckets], dtype=int))
+        partition_gpu = cuda.device_array(num_buckets - 1, dtype=int)
         cuda_reconstruct[1, 1](divider_location_gpu, min_cost_gpu,
                                num_items_gpu, num_buckets_gpu, partition_gpu,
                                min_variance_gpu)
@@ -243,7 +243,7 @@ class CUDAOptimizer(Histoptimizer):
         num_items_gpu = cuda.to_device(np.array([len(items) - 1]))
         item_cost_gpu = cuda.to_device(item_cost)
         min_cost_gpu = cuda.device_array((len(items), num_buckets+1))
-        divider_location_gpu = cuda.device_array((len(items), num_buckets+1), dtype=np.int)
+        divider_location_gpu = cuda.device_array((len(items), num_buckets+1), dtype=int)
 
         # Initialize row 1 and column 1 of the min_cost matrix. These could be handled
         # Using logic in the main kernel, but it does not appear to improve performance.

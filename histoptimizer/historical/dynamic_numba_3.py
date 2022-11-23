@@ -57,7 +57,7 @@ class NumbaOptimizerDraft3(Histoptimizer):
         prefix_sum = cls.get_prefix_sums(items)
 
         min_cost = np.zeros((len(prefix_sum), buckets + 1), dtype=np.float32)
-        divider_location = np.zeros((len(prefix_sum), buckets + 1), dtype=np.int32)
+        divider_location = np.zeros((len(prefix_sum), buckets + 1), dtype=int)
         build_matrices(buckets, prefix_sum, min_cost, divider_location)
 
         if debug_info is not None:
