@@ -85,7 +85,7 @@ class CUDAOptimizerBuckets(CUDAOptimizer):
 
         cuda_partition_kernel[1, num_buckets-1](min_cost_gpu, divider_location_gpu, prefix_sum_gpu, mean_value_gpu)
 
-        min_variance, partition = cls.reconstruct_partition(items, num_buckets, min_cost_gpu, divider_location_gpu)
+        min_variance, partition = cls.cuda_reconstruct_partition(items, num_buckets, min_cost_gpu, divider_location_gpu)
 
         cls.add_debug_info(debug_info, divider_location_gpu, items, min_cost_gpu, prefix_sum)
 

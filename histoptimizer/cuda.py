@@ -4,7 +4,7 @@ The cuda module implements a parallelized version of Skiena's dynamic
 programming algorithm for solving the linear partition problem. It relies on
 the CUDA facilities of NVidia GPUs.
 
-Copyright (C) 2022 by Kelly Joyner (de@lusion.org)
+Copyright (C) 2020 by Kelly Joyner (de@lusion.org)
 
 Permission to use, copy, modify, and/or distribute this software for any purpose
 with or without fee is hereby granted.
@@ -24,10 +24,7 @@ import numpy as np
 
 from histoptimizer import Histoptimizer
 
-#from histoptimizer.cuda_common import add_debug_info, reconstruct_partition
-
 # import os; os.environ['NUMBA_ENABLE_CUDASIM'] = '1'
-name = 'cuda'
 
 threads_per_item_pair = 8
 item_pairs_per_block = 8
@@ -192,7 +189,7 @@ class CUDAOptimizer(Histoptimizer):
             debug_info['divider_location'] = divider_location
 
     @classmethod
-    def reconstruct_partition(cls, items, num_buckets, min_cost_gpu,
+    def cuda_reconstruct_partition(cls, items, num_buckets, min_cost_gpu,
                               divider_location_gpu):
         min_variance_gpu = cuda.device_array((1,), dtype=np.float32)
         num_items_gpu = cuda.to_device(np.array([len(items) - 1], dtype=np.int))
@@ -262,7 +259,7 @@ class CUDAOptimizer(Histoptimizer):
             _cuda_partition_kernel[num_blocks, threads_per_block](min_cost_gpu, divider_location_gpu, prefix_sum_gpu, num_items_gpu, bucket_gpu, mean_value_gpu)
 
         # Calculate the list of dividers from the min_cost and divider_location matrices
-        min_variance, partition_locations = cls.reconstruct_partition(items,num_buckets, min_cost_gpu, divider_location_gpu)
+        min_variance, partition_locations = cls.cuda_reconstruct_partition(items,num_buckets, min_cost_gpu, divider_location_gpu)
         cls.add_debug_info(debug_info, divider_location_gpu, items, min_cost_gpu, prefix_sum)
 
         return partition_locations, min_variance

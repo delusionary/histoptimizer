@@ -27,19 +27,7 @@ import re
 
 from histoptimizer import Histoptimizer, histoptimize
 from histoptimizer.cuda import CUDAOptimizer
-from histoptimizer.numba import NumbaOptimizer   
-from histoptimizer.historical.cuda_1 import CUDAOptimizerBuckets
-from histoptimizer.historical.cuda_2 import CUDAOptimizerItemPairs
-from histoptimizer.historical.dynamic_numpy import NumpyOptimizer
-from histoptimizer.historical.dynamic_numba_2 import NumbaOptimizerDraft2
-from histoptimizer.historical.dynamic_numba_3 import NumbaOptimizerDraft3
-from histoptimizer.historical.enumerate import EnumeratingOptimizer
-from histoptimizer.historical.numpy_min_max_sum_partition\
-    import NumpyMinMaxSumOptimizer
-from histoptimizer.historical.recursive import RecursiveOptimizer
-from histoptimizer.historical.recursive_numba import RecursiveNumbaOptimizer
-from histoptimizer.historical.recursive_cache import RecursiveCacheOptimizer
-from histoptimizer.historical.recursive_verbose import RecursiveVerboseOptimizer
+from histoptimizer.numba import NumbaOptimizer
 
 standard_implementations = {c.name: c for c in
                             (Histoptimizer, NumbaOptimizer, CUDAOptimizer)}

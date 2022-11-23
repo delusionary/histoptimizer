@@ -6,7 +6,7 @@ import pytest
 
 import histoptimizer.benchmark as benchmark
 from histoptimizer import Histoptimizer
-from  histoptimizer.numba import NumbaOptimizer
+from histoptimizer.numba import NumbaOptimizer
 
 @pytest.fixture
 def pivot_benchmark():
@@ -27,9 +27,9 @@ def test_main_succeeds(tmp_path):
     report_file = tmp_path / 'report.json'
     runner = click.testing.CliRunner()
     # FILE ID_COLUMN SIZE_COLUMN PARTITIONS
-    result = runner.invoke(benchmark.cli, ['--sizes-from', 'sizes_only.csv',
-                                           '--report', str(report_file),
-                                           'dynamic_numba,dynamic', '5-6', '3-4', '1'])
+    runner.invoke(benchmark.cli, ['--sizes-from', 'fixtures/sizes_only.csv',
+                                   '--report', str(report_file),
+                                   'dynamic_numba,dynamic', '5-6', '3-4', '1'])
     filed_report = pd.read_json(str(report_file), orient='records').drop(['variance', 'elapsed_seconds'], axis=1)
     expected_report = pd.read_json('fixtures/benchmark_report.json')
     assert np.array_equal(filed_report.to_numpy(), expected_report.to_numpy())

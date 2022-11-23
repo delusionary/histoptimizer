@@ -1,4 +1,3 @@
-import histoptimizer
 import numpy as np
 import pandas as pd
 import pytest
@@ -9,6 +8,8 @@ import json
 import pytest
 import time
 
+import histoptimizer
+
 from math import isclose
 
 from histoptimizer import Histoptimizer
@@ -16,12 +17,10 @@ from histoptimizer.cuda import CUDAOptimizer
 from histoptimizer.numba import NumbaOptimizer
 from histoptimizer.historical.cuda_1 import CUDAOptimizerBuckets
 from histoptimizer.historical.cuda_2 import CUDAOptimizerItemPairs
-from histoptimizer.historical.dynamic_numpy import NumpyOptimizer
 from histoptimizer.historical.dynamic_numba_2 import NumbaOptimizerDraft2
 from histoptimizer.historical.dynamic_numba_3 import NumbaOptimizerDraft3
 from histoptimizer.historical.enumerate import EnumeratingOptimizer
 from histoptimizer.historical.recursive import RecursiveOptimizer
-from histoptimizer.historical.recursive_numba import RecursiveNumbaOptimizer
 from histoptimizer.historical.recursive_cache import RecursiveCacheOptimizer
 from histoptimizer.historical.recursive_verbose import RecursiveVerboseOptimizer
 
@@ -32,12 +31,10 @@ optimal_partitioners = (
     CUDAOptimizer,
     CUDAOptimizerBuckets,
     CUDAOptimizerItemPairs,
-    NumpyOptimizer,
     NumbaOptimizerDraft2,
     NumbaOptimizerDraft3,
     EnumeratingOptimizer,
     RecursiveOptimizer,
-    RecursiveNumbaOptimizer,
     RecursiveCacheOptimizer,
     RecursiveVerboseOptimizer
 )
