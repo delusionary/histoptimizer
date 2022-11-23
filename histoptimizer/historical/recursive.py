@@ -13,42 +13,43 @@ that creates partitions, or buckets, such that the variance/standard deviation b
 minimized.
 """
 import numpy as np
-import histoptimizer
+from histoptimizer import Histoptimizer
 
-name = 'recursive'
+class RecursiveOptimizer(Histoptimizer):
+    name = 'recursive'
 
+    @classmethod
+    def min_cost_partition(cls, items: list, k: int, last_item=None, mean=None):
+        """
 
-def min_cost_partition(items: list, k: int, last_item=None, mean=None):
-    """
+        """
+        n = len(items)
+        j = k - 1
+        if mean is None:
+            mean = sum(items) / k
+        if last_item is None:
+            last_item = n - 1
+        first_possible_position = j
+        best_cost = np.inf
 
-    """
-    n = len(items)
-    j = k - 1
-    if mean is None:
-        mean = sum(items) / k
-    if last_item is None:
-        last_item = n - 1
-    first_possible_position = j
-    best_cost = np.inf
+        # The base case is that we are being called to find the optimum location of the first divider for a given
+        # location of the second divider
+        if j == 0:
+            return (sum(items[0:last_item + 1]) - mean)**2, []
 
-    # The base case is that we are being called to find the optimum location of the first divider for a given
-    # location of the second divider
-    if j == 0:
-        return (sum(items[0:last_item + 1]) - mean)**2, []
+        for current_divider_location in range(first_possible_position, last_item + 1):
+            for previous_divider_location in range(j - 1, current_divider_location):
+                (lh_cost, previous_dividers) = cls.min_cost_partition(items, k - 1, last_item=current_divider_location - 1,
+                                                                  mean=mean)
+                rh_cost = (sum(items[current_divider_location:last_item + 1]) - mean) ** 2
+                cost = lh_cost + rh_cost
+                if cost < best_cost:
+                    best_cost = cost
+                    dividers = previous_dividers + [current_divider_location]
+        return best_cost, dividers
 
-    for current_divider_location in range(first_possible_position, last_item + 1):
-        for previous_divider_location in range(j - 1, current_divider_location):
-            (lh_cost, previous_dividers) = min_cost_partition(items, k - 1, last_item=current_divider_location - 1,
-                                                              mean=mean)
-            rh_cost = (sum(items[current_divider_location:last_item + 1]) - mean) ** 2
-            cost = lh_cost + rh_cost
-            if cost < best_cost:
-                best_cost = cost
-                dividers = previous_dividers + [current_divider_location]
-    return best_cost, dividers
-
-
-def partition(items, k, debug_info=None):
-    variance, dividers = min_cost_partition(items, k)
-    return dividers, variance / k
+    @classmethod
+    def partition(cls, items, k, debug_info=None):
+        variance, dividers = cls.min_cost_partition(items, k)
+        return dividers, variance / k
 

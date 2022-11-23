@@ -1,9 +1,10 @@
 import numpy as np
 import os
 from numba import guvectorize, float32, int64
-from histoptimizer import Histoptimizer, get_prefix_sums, partitioner
+from histoptimizer import Histoptimizer
 
 # os.environ['NUMBA_DISABLE_JIT'] = '1'
+
 
 @guvectorize(
     ['i4, f4[:], f4[:], f4, f4[:], f4[:]'],
@@ -32,6 +33,7 @@ def _get_min_cost(bucket, prefix_sum, previous_row, mean, current_row_cost,
 
 class NumbaOptimizer(Histoptimizer):
     name = 'numba'
+
     @classmethod
     def precompile(cls):
         cls.partition([1, 4, 6, 9], 3)
@@ -49,34 +51,3 @@ class NumbaOptimizer(Histoptimizer):
                 cls.get_min_cost(bucket, prefix_sum, min_cost[:, bucket-1], mean)
 
         return min_cost, divider_location
-
-    # noinspection DuplicatedCode
-    # @classmethod
-    # def partition(cls, item_sizes, num_buckets: int, debug_info: dict = None
-    #               ) -> list:
-    #     """
-    #     Implements a histoptimizer.partitioner-compliant partitioner.
-    #
-    #     Args:
-    #         item_sizes (iterable): An iterable of float- or float-compatible values representing a sorted series of item sizes.
-    #         num_buckets (int): Number of buckets to partition items into.
-    #         debug_info: A dictionary to be populated with debugging information.
-    #
-    #     Returns:
-    #         dividers (list): A list of divider locations that partitions items into `buckets` partitions such that
-    #             the variance of the partition item sums is minimized.
-    #         variance: The resulting variance.
-    #     """
-    #     prefix_sum = cls.get_prefix_sums(item_sizes)
-    #
-    #     min_cost, divider_location = cls.init_matrices(num_buckets, prefix_sum)
-    #     cls.build_matrices(min_cost, divider_location, prefix_sum)
-    #
-    #     if debug_info is not None:
-    #         debug_info['items'] = item_sizes
-    #         debug_info['prefix_sum'] = prefix_sum
-    #         debug_info['min_cost'] = min_cost
-    #         debug_info['divider_location'] = divider_location
-    #
-    #     partition = cls.reconstruct_partition(divider_location, len(item_sizes), num_buckets)
-    #     return partition, min_cost[len(item_sizes), num_buckets] / num_buckets

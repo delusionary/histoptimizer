@@ -6,13 +6,9 @@ import histoptimizer.cli
 def test_main_succeeds():
     runner = click.testing.CliRunner()
     # FILE ID_COLUMN SIZE_COLUMN PARTITIONS
-    result = runner.invoke(histoptimizer.cli.cli, ['sortframe.csv', 'id', 'size', '2-4'])
-
+    result = runner.invoke(histoptimizer.cli.cli, ['fixtures/sortframe.csv',
+                                                   'id', 'size', '2-4'])
     assert result.exit_code == 0
-
-
-def test_partitioners_dict():
-    assert not {'dynamic', 'dynamic_numba'} - set(histoptimizer.cli.partitioners.keys())
 
 
 def test_parse_set_spec():

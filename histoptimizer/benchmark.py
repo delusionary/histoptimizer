@@ -11,7 +11,41 @@ import pandas as pd
 from math import ceil, log10
 import platform
 
-from histoptimizer.cli import partitioners, parse_set_spec
+from histoptimizer.cli import parse_set_spec
+
+from histoptimizer import Histoptimizer
+from histoptimizer.cuda import CUDAOptimizer
+from histoptimizer.numba import NumbaOptimizer
+from histoptimizer.historical.cuda_1 import CUDAOptimizerBuckets
+from histoptimizer.historical.cuda_2 import CUDAOptimizerItemPairs
+from histoptimizer.historical.dynamic_numpy import NumpyOptimizer
+from histoptimizer.historical.dynamic_numba_2 import NumbaOptimizerDraft2
+from histoptimizer.historical.dynamic_numba_3 import NumbaOptimizerDraft3
+from histoptimizer.historical.enumerate import EnumeratingOptimizer
+from histoptimizer.historical.numpy_min_max_sum_partition\
+    import NumpyMinMaxSumOptimizer
+from histoptimizer.historical.recursive import RecursiveOptimizer
+from histoptimizer.historical.recursive_numba import RecursiveNumbaOptimizer
+from histoptimizer.historical.recursive_cache import RecursiveCacheOptimizer
+from histoptimizer.historical.recursive_verbose import RecursiveVerboseOptimizer
+
+
+partitioners = {c.name for c in (
+                                    Histoptimizer,
+                                    CUDAOptimizer,
+                                    NumbaOptimizer,
+                                    CUDAOptimizerBuckets,
+                                    CUDAOptimizerItemPairs,
+                                    NumpyOptimizer,
+                                    NumbaOptimizerDraft2,
+                                    NumbaOptimizerDraft3,
+                                    EnumeratingOptimizer,
+                                    NumpyMinMaxSumOptimizer,
+                                    RecursiveOptimizer,
+                                    RecursiveNumbaOptimizer,
+                                    RecursiveCacheOptimizer,
+                                    RecursiveVerboseOptimizer,
+)}
 
 #  os.environ['NSIGHT_CUDA_DEBUGGER'] = '1'
 
@@ -27,8 +61,7 @@ def get_system_info() -> dict:
     return system
 
 
-
-def partitioner_pivot(df: pd.DataFrame, partitioner: str) -> pd.DataFrame:
+def partitioner_pivot(df: pd.DataFrame, partitioner) -> pd.DataFrame:
     """
     Given a DataFrame of results produced by histobench, and the name of a partitioner,
     isolate results of that partitioner and create a pivot table on bucket, so that

@@ -13,14 +13,10 @@ that creates partitions, or buckets, such that the variance/standard deviation b
 minimized.
 """
 import numpy as np
-import histoptimizer
-
 from numba import jit, float32, int32, void
+from histoptimizer import Histoptimizer
 
-name = 'recursive_numba'
-
-
-@jit(void(float32[:], int32, int32, float32)
+@jit(void(float32[:], int32, int32, float32))
 def min_cost_partition(items, k, last_item, mean):
     """
 
@@ -51,7 +47,15 @@ def min_cost_partition(items, k, last_item, mean):
     return best_cost, dividers
 
 
-def partition(items, k, debug_info=None):
-    variance, dividers = min_cost_partition(items, k)
-    return dividers, variance / k
+class RecursiveNumbaOptimizer(Histoptimizer):
+    name = 'recursive_numba'
+
+    @classmethod
+    def partition(cls, items, k, debug_info=None):
+        variance, dividers = min_cost_partition(items, k, len(items), None)
+        return dividers, variance / k
+
+
+
+
 

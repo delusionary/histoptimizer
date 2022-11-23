@@ -1,26 +1,7 @@
 import numpy as np
-import os
 from numba import guvectorize, float32, int64, prange
-from histoptimizer import get_prefix_sums, partitioner
+from histoptimizer import Histoptimizer
 
-name = 'dynamic_numba_2'
-
-
-def precompile():
-    partition([1, 4, 6, 9], 3)
-
-# noinspection DuplicatedCode
-def reconstruct_partition(divider_location, num_items, num_buckets):
-    if num_buckets < 2:
-        return np.array(0)
-    partitions = np.zeros((num_buckets - 1,), dtype=np.int)
-    divider = num_buckets
-    while divider > 2:
-        partitions[divider - 2] = divider_location[num_items, divider]
-        num_items = divider_location[num_items, divider]
-        divider -= 1
-    partitions[0] = divider_location[num_items, divider]
-    return partitions
 
 # os.environ['NUMBA_DISABLE_JIT'] = '1'
 # noinspection DuplicatedCode
@@ -61,33 +42,39 @@ def build_matrices(bucket_list, buckets, prefix_sum, min_cost, divider_location)
             # current_row_dividers[item] = divider_location
 
 
-# noinspection DuplicatedCode
-@partitioner
-def partition(items, buckets: int, debug_info: dict = None) -> list:
-    """
-    Implements a histoptimizer.partitioner-compliant partitioner.
+class NumbaOptimizerDraft2(Histoptimizer):
+    name = 'dynamic_numba_2'
 
-    Args:
-        items (iterable): An iterable of float- or float-compatible values representing a sorted series of item sizes.
-        buckets (int): Number of buckets to partition items into.
-        debug_info: A dictionary to be populated with debugging information.
+    @classmethod
+    def precompile(cls):
+        cls.partition([1, 4, 6, 9], 3)
 
-    Returns:
-        dividers (list): A list of divider locations that partitions items into `buckets` partitions such that
-            the variance of the partition item sums is minimized.
-        variance: The resulting variance.
-    """
-    prefix_sum = get_prefix_sums(items)
+    @classmethod
+    def partition(cls, items, buckets: int, debug_info: dict = None) -> list:
+        """
+        Implements a histoptimizer.partitioner-compliant partitioner.
 
-    #min_cost, divider_location = init_matrices(buckets, prefix_sum)
-    bucket_list = np.zeros((buckets + 1), dtype=np.int32)
-    min_cost, divider_location = build_matrices(bucket_list, buckets, prefix_sum)
+        Args:
+            items (iterable): An iterable of float- or float-compatible values representing a sorted series of item sizes.
+            buckets (int): Number of buckets to partition items into.
+            debug_info: A dictionary to be populated with debugging information.
 
-    if debug_info is not None:
-        debug_info['items'] = items
-        debug_info['prefix_sum'] = prefix_sum
-        debug_info['min_cost'] = min_cost
-        debug_info['divider_location'] = divider_location
+        Returns:
+            dividers (list): A list of divider locations that partitions items into `buckets` partitions such that
+                the variance of the partition item sums is minimized.
+            variance: The resulting variance.
+        """
+        prefix_sum = cls.get_prefix_sums(items)
 
-    partition = reconstruct_partition(divider_location, len(items), buckets)
-    return partition, min_cost[len(items), buckets] / buckets
+        #min_cost, divider_location = init_matrices(buckets, prefix_sum)
+        bucket_list = np.zeros((buckets + 1), dtype=np.int32)
+        min_cost, divider_location = build_matrices(bucket_list, buckets, prefix_sum)
+
+        if debug_info is not None:
+            debug_info['items'] = items
+            debug_info['prefix_sum'] = prefix_sum
+            debug_info['min_cost'] = min_cost
+            debug_info['divider_location'] = divider_location
+
+        partition = cls.reconstruct_partition(divider_location, len(items), buckets)
+        return partition, min_cost[len(items), buckets] / buckets

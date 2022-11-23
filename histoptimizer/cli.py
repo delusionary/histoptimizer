@@ -5,9 +5,6 @@ provides the user the ability to partition an ordered set of
 JSON or CSV data items into a set of "buckets" such that the variance
 of the bucket sizes is minimized. Each data item must specify a size.
 
-
-Todo:
-
 Copyright (C) 2022 by Kelly Joyner (de@lusion.org)
 
 Permission to use, copy, modify, and/or distribute this software for any purpose
@@ -25,44 +22,27 @@ THIS SOFTWARE.
 
 import click
 import pandas
-from time import time
 import sys
 import re
 
-from histoptimizer import histoptimize, get_partitioner_dict
+from histoptimizer import Histoptimizer, histoptimize
+from histoptimizer.cuda import CUDAOptimizer
+from histoptimizer.numba import NumbaOptimizer   
+from histoptimizer.historical.cuda_1 import CUDAOptimizerBuckets
+from histoptimizer.historical.cuda_2 import CUDAOptimizerItemPairs
+from histoptimizer.historical.dynamic_numpy import NumpyOptimizer
+from histoptimizer.historical.dynamic_numba_2 import NumbaOptimizerDraft2
+from histoptimizer.historical.dynamic_numba_3 import NumbaOptimizerDraft3
+from histoptimizer.historical.enumerate import EnumeratingOptimizer
+from histoptimizer.historical.numpy_min_max_sum_partition\
+    import NumpyMinMaxSumOptimizer
+from histoptimizer.historical.recursive import RecursiveOptimizer
+from histoptimizer.historical.recursive_numba import RecursiveNumbaOptimizer
+from histoptimizer.historical.recursive_cache import RecursiveCacheOptimizer
+from histoptimizer.historical.recursive_verbose import RecursiveVerboseOptimizer
 
-import histoptimizer.historical.enumerate_pandas
-import histoptimizer.historical.enumerate
-import histoptimizer.historical.recursive_cache
-import histoptimizer.historical.recursive_verbose
-import histoptimizer.historical.recursive
-import histoptimizer.historical.cuda_1
-import histoptimizer.historical.cuda_2
-import histoptimizer.historical.cuda_3
-import histoptimizer.historical.dynamic_numpy
-import histoptimizer.historical.dynamic_numba_2
-import histoptimizer.historical.dynamic_numba_3
-import histoptimizer.cuda
-import histoptimizer.dynamic
-import histoptimizer.numba
-import histoptimizer.historical.enumerate_pandas
-
-partitioners = get_partitioner_dict(
-    histoptimizer.historical.enumerate_pandas,
-    histoptimizer.historical.enumerate,
-    histoptimizer.dynamic,
-    histoptimizer.numba,
-    histoptimizer.historical.dynamic_numba_2,
-    histoptimizer.historical.dynamic_numba_3,
-    histoptimizer.historical.dynamic_numpy,
-    histoptimizer.historical.cuda_1,
-    histoptimizer.historical.cuda_2,
-    histoptimizer.historical.cuda_3,
-    histoptimizer.cuda,
-    histoptimizer.historical.recursive_cache,
-    histoptimizer.historical.recursive_verbose,
-    histoptimizer.historical.recursive
-)
+standard_implementations = {c.name: c for c in
+                            (Histoptimizer, NumbaOptimizer, CUDAOptimizer)}
 
 
 def parse_set_spec(spec: str, substitute: dict = None) -> list:
@@ -155,8 +135,17 @@ def cli(file, id_column, size_column, partitions, limit, ascending,
 
     bucket_list = parse_set_spec(partitions)
 
-    data, partition_columns = histoptimize(data, size_column, bucket_list, column_prefix,
-                                           partitioners[implementation].partition)
+    if implementation in standard_implementations:
+        partitioner = standard_implementations[implementation]
+    elif implementation in historical_implementations:
+        # Do a warning
+        partitioner = historical_implementations[implementation]
+
+    data, partition_columns = histoptimize(data,
+                                           size_column,
+                                           bucket_list,
+                                           column_prefix,
+                                           partitioner.partition)
 
     if not print_all:
         data = data[[c for c in [id_column, sort_key, size_column] if c is not None] + partition_columns]

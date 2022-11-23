@@ -3,19 +3,13 @@ import math
 from numba import cuda
 import numpy as np
 
-from histoptimizer.cuda_common import add_debug_info, reconstruct_partition
+from histoptimizer.cuda import CUDAOptimizer
 
 # import os; os.environ['NUMBA_ENABLE_CUDASIM'] = '1'
 
 
-# Instead of doing one thread per bucket, Do one thread at a time and divvy up the work for the items in each
+# Instead of doing one thread per bucket, Do one item at a time and divvy up the work for the items in each
 # thread.
-
-name = 'cuda_2'
-
-
-def precompile():
-    partition([1, 4, 6, 9], 3)
 
 @cuda.jit
 def init_items_kernel(min_cost, prefix_sum):
@@ -80,39 +74,47 @@ def cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items, buc
     return
 
 
-def partition(items, num_buckets, debug_info=None):
-    padded_items = [0]
-    padded_items.extend(items)
-    items = padded_items
-    prefix_sum = np.zeros((len(items)), dtype=np.float32)
-    item_cost = np.zeros((len(items)), dtype=np.float32)
-    mean_bucket_sum = sum(items) / num_buckets
-    # Pre-calculate prefix sums for items in the array.
-    for item in range(1, len(items)):
-        prefix_sum[item] = prefix_sum[item - 1] + items[item]
-        item_cost[item] = (prefix_sum[item] - mean_bucket_sum)**2
-    # Determine the min cost of placing the first divider at each item.
-    # get_cost = np.vectorize(lambda x: (x-mean_bucket_sum)**2)
-    # item_cost = get_cost(items)
+class CUDAOptimizerItemPairs(CUDAOptimizer):
+    name = 'cuda_2'
 
-    prefix_sum_gpu = cuda.to_device(prefix_sum)
-    mean_value_gpu = cuda.to_device(np.array([mean_bucket_sum], dtype=np.float32))
-    num_items_gpu = cuda.to_device(np.array([len(items) - 1]))
-    item_cost_gpu = cuda.to_device(item_cost)
-    min_cost_gpu = cuda.device_array((len(items), num_buckets+1))
-    divider_location_gpu = cuda.device_array((len(items), num_buckets+1), dtype=np.int)
+    @classmethod
+    def precompile(cls):
+        cls.partition([1, 4, 6, 9], 3)
 
-    threads_per_block = 256
-    num_blocks = math.ceil((len(items) / 2) / threads_per_block)
-    init_items_kernel[num_blocks, threads_per_block](min_cost_gpu, item_cost_gpu) # prefix_sum_gpu)
-    # We don't really need this, could be a special case in kernel.
-    init_buckets_kernel[1, num_buckets](min_cost_gpu, item_cost_gpu) # prefix_sum_gpu)
-
-    for bucket in range(2, num_buckets + 1):
-        bucket_gpu = cuda.to_device(np.array([bucket]))
-        cuda_partition_kernel[num_blocks, threads_per_block](min_cost_gpu, divider_location_gpu, prefix_sum_gpu, num_items_gpu, bucket_gpu, mean_value_gpu)
-
-    min_variance, partition = reconstruct_partition(items, num_buckets, min_cost_gpu, divider_location_gpu)
-    add_debug_info(debug_info, divider_location_gpu, items, min_cost_gpu, prefix_sum)
-
-    return partition, min_variance
+    # @classmethod
+    # def partition(cls, items, num_buckets, debug_info=None):
+    #     padded_items = [0]
+    #     padded_items.extend(items)
+    #     items = padded_items
+    #     prefix_sum = np.zeros((len(items)), dtype=np.float32)
+    #     item_cost = np.zeros((len(items)), dtype=np.float32)
+    #     mean_bucket_sum = sum(items) / num_buckets
+    #     # Pre-calculate prefix sums for items in the array.
+    #     for item in range(1, len(items)):
+    #         prefix_sum[item] = prefix_sum[item - 1] + items[item]
+    #         item_cost[item] = (prefix_sum[item] - mean_bucket_sum)**2
+    #     # Determine the min cost of placing the first divider at each item.
+    #     # get_cost = np.vectorize(lambda x: (x-mean_bucket_sum)**2)
+    #     # item_cost = get_cost(items)
+    #
+    #     prefix_sum_gpu = cuda.to_device(prefix_sum)
+    #     mean_value_gpu = cuda.to_device(np.array([mean_bucket_sum], dtype=np.float32))
+    #     num_items_gpu = cuda.to_device(np.array([len(items) - 1]))
+    #     item_cost_gpu = cuda.to_device(item_cost)
+    #     min_cost_gpu = cuda.device_array((len(items), num_buckets+1))
+    #     divider_location_gpu = cuda.device_array((len(items), num_buckets+1), dtype=np.int)
+    #
+    #     threads_per_block = 256
+    #     num_blocks = math.ceil((len(items) / 2) / threads_per_block)
+    #     init_items_kernel[num_blocks, threads_per_block](min_cost_gpu, item_cost_gpu) # prefix_sum_gpu)
+    #     # We don't really need this, could be a special case in kernel.
+    #     init_buckets_kernel[1, num_buckets](min_cost_gpu, item_cost_gpu) # prefix_sum_gpu)
+    #
+    #     for bucket in range(2, num_buckets + 1):
+    #         bucket_gpu = cuda.to_device(np.array([bucket]))
+    #         cuda_partition_kernel[num_blocks, threads_per_block](min_cost_gpu, divider_location_gpu, prefix_sum_gpu, num_items_gpu, bucket_gpu, mean_value_gpu)
+    #
+    #     min_variance, partition = cls.reconstruct_partition(items, num_buckets, min_cost_gpu, divider_location_gpu)
+    #     cls.add_debug_info(debug_info, divider_location_gpu, items, min_cost_gpu, prefix_sum)
+    #
+    #     return partition, min_variance
