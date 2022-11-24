@@ -1,12 +1,12 @@
 {
   "partitioner": {
-    "0": "dynamic_numba",
+    "0": "numba",
     "1": "dynamic",
-    "2": "dynamic_numba",
+    "2": "numba",
     "3": "dynamic",
-    "4": "dynamic_numba",
+    "4": "numba",
     "5": "dynamic",
-    "6": "dynamic_numba",
+    "6": "numba",
     "7": "dynamic"
   },
   "num_items": {

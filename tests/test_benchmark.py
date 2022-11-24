@@ -8,6 +8,7 @@ import histoptimizer.benchmark as benchmark
 from histoptimizer import Histoptimizer
 from histoptimizer.numba import NumbaOptimizer
 
+
 @pytest.fixture
 def pivot_benchmark():
     return pd.read_json('fixtures/pivot_benchmark.json')
@@ -29,7 +30,7 @@ def test_main_succeeds(tmp_path):
     # FILE ID_COLUMN SIZE_COLUMN PARTITIONS
     runner.invoke(benchmark.cli, ['--sizes-from', 'fixtures/sizes_only.csv',
                                    '--report', str(report_file),
-                                   'dynamic_numba,dynamic', '5-6', '3-4', '1'])
+                                   'numba,dynamic', '5-6', '3-4', '1'])
     filed_report = pd.read_json(str(report_file), orient='records').drop(['variance', 'elapsed_seconds'], axis=1)
     expected_report = pd.read_json('fixtures/benchmark_report.json')
     assert np.array_equal(filed_report.to_numpy(), expected_report.to_numpy())
@@ -62,7 +63,7 @@ def test_partitioner_pivot(pivot_benchmark):
     expected_dynamic = pd.read_json('fixtures/pivot_dynamic.json')
     assert np.array_equal(expected_dynamic.to_numpy(), pivot.to_numpy())
 
-    pivot = benchmark.partitioner_pivot(pivot_benchmark, 'dynamic_numba')
+    pivot = benchmark.partitioner_pivot(pivot_benchmark, 'numba')
     expected_dynamic_numba = pd.read_json('fixtures/pivot_dynamic_numba.json')
     assert np.array_equal(expected_dynamic_numba.to_numpy(), pivot.to_numpy())
 

@@ -28,7 +28,7 @@ from histoptimizer.historical.recursive_cache import RecursiveCacheOptimizer
 from histoptimizer.historical.recursive_verbose import RecursiveVerboseOptimizer
 
 
-partitioners = {c.name for c in (
+partitioners = {c.name:c for c in (
                                     Histoptimizer,
                                     CUDAOptimizer,
                                     NumbaOptimizer,

@@ -1,6 +1,6 @@
 [
   {
-    "partitioner": "dynamic_numba",
+    "partitioner": "numba",
     "num_items": 5,
     "buckets": 3,
     "iteration": 1,
@@ -38,7 +38,7 @@
     ]
   },
   {
-    "partitioner": "dynamic_numba",
+    "partitioner": "numba",
     "num_items": 5,
     "buckets": 4,
     "iteration": 1,
@@ -78,7 +78,7 @@
     ]
   },
   {
-    "partitioner": "dynamic_numba",
+    "partitioner": "numba",
     "num_items": 6,
     "buckets": 3,
     "iteration": 1,
@@ -118,7 +118,7 @@
     ]
   },
   {
-    "partitioner": "dynamic_numba",
+    "partitioner": "numba",
     "num_items": 6,
     "buckets": 4,
     "iteration": 1,
