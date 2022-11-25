@@ -25,6 +25,9 @@ from histoptimizer.historical.recursive_verbose import RecursiveVerboseOptimizer
 
 # import os
 # os.environ['CUDA_HOME'] = 'C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.8'
+import os
+os.environ['NUMBA_ENABLE_CUDASIM'] = '1'
+
 
 optimal_partitioners = (
     Histoptimizer,
