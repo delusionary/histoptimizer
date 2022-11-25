@@ -5,7 +5,7 @@ provides the user the ability to partition an ordered set of
 JSON or CSV data items into a set of "buckets" such that the variance
 of the bucket sizes is minimized. Each data item must specify a size.
 
-Copyright (C) 2022 by Kelly Joyner (de@lusion.org)
+Copyright (C) 2020 by Kelly Joyner (de@lusion.org)
 
 Permission to use, copy, modify, and/or distribute this software for any purpose
 with or without fee is hereby granted.
@@ -32,6 +32,14 @@ from histoptimizer.numba import NumbaOptimizer
 standard_implementations = {c.name: c for c in
                             (Histoptimizer, NumbaOptimizer, CUDAOptimizer)}
 
+
+def set_jit_disable():
+    """Enable or disable Numba JIT compilation and CUDA Simulation
+    """
+    # import os
+    # os.environ['NUMBA_DISABLE_JIT'] = '1'
+    # os.environ['NUMBA_ENABLE_CUDASIM'] = '1'
+    pass
 
 def parse_set_spec(spec: str, substitute: dict = None) -> list:
     """

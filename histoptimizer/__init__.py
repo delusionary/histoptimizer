@@ -1,3 +1,18 @@
+"""Provides capabilities for dividing a list of items into buckets evenly.
+
+Copyright (C) 2020 by Kelly Joyner (de@lusion.org)
+
+Permission to use, copy, modify, and/or distribute this software for any purpose
+with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+THIS SOFTWARE.
+"""
 import pandas as pd
 import numpy as np
 
@@ -7,6 +22,18 @@ class Histoptimizer(object):
 
     Histoptimizer provides a basic, pure python solution for the linear
     partition problem with a minimum variance cost function.
+
+    The base implementation is a staightforward linear implementation
+    of Skiena's dynamic programming algorithm for the linear partition
+    problem, with a modified cost function.
+
+    See:
+
+    _The Algorithm Design Manual_, S. Skiena. Springer, London, 2008
+         Section 8.5: The Partition Problem, pp 294-297
+
+    See Also:
+    https://www3.cs.stonybrook.edu/~algorith/video-lectures/1997/lecture11.pdf
 
     """
     name = 'dynamic'
@@ -61,7 +88,7 @@ class Histoptimizer(object):
         subtraction: prefix_sums[n] - prefix_sums[m]
 
         Args:
-            item_sizes (iterable): A list of item sizes, integer or float.
+            item_sizes: A list of item sizes, integer or float.
 
         Returns:
             NumPy float32 array containing a [0]-prefixed cumulative sum.
@@ -145,7 +172,6 @@ class Histoptimizer(object):
 
         return min_cost, divider_location
 
-
     @classmethod
     def precompile(cls):
         """Precompile any accelerator code used by this class.
@@ -170,12 +196,6 @@ class Histoptimizer(object):
         these indexes results in a set of buckets with the lowest possible
         variance over the sum of the items sizes in each bucket.
 
-        The base implementation is a staightforward linear implementation
-        of Skiena's dynamic programming algorithm for the linear partition
-        problem, with a modified cost function.
-
-        See: _The Algorithm Design Manual_, S. Skiena. Springer, London, 2008
-
         Arguments:
             item_sizes: An iterable of float- or float-compatible values
                         representing a sorted series of item sizes.
@@ -191,6 +211,7 @@ class Histoptimizer(object):
             min_variance: The variance of the solution defined by
                 `partition_locations`
         """
+        cls.check_parameters(item_sizes, num_buckets, debug_info)
         num_items = len(item_sizes)
 
         prefix_sum = cls.get_prefix_sums(item_sizes)

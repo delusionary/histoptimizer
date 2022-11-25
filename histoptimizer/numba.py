@@ -1,6 +1,21 @@
+"""
+
+Copyright (C) 2020 by Kelly Joyner (de@lusion.org)
+
+Permission to use, copy, modify, and/or distribute this software for any purpose
+with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+THIS SOFTWARE.
+"""
 import numpy as np
 import os
-from numba import guvectorize, float32, int64
+from numba import guvectorize
 from histoptimizer import Histoptimizer
 
 # os.environ['NUMBA_DISABLE_JIT'] = '1'
@@ -31,6 +46,7 @@ def _get_min_cost(bucket, prefix_sum, previous_row, mean,
         current_row_cost[item] = min_cost
         current_row_dividers[item] = divider_location
 
+
 class NumbaOptimizer(Histoptimizer):
     name = 'numba'
 
@@ -48,6 +64,7 @@ class NumbaOptimizer(Histoptimizer):
         mean = prefix_sum[-1] / num_buckets
         for bucket in range(2, min_cost.shape[1]):
             min_cost[:, bucket], divider_location[:, bucket] =\
-                cls.get_min_cost(bucket, prefix_sum, min_cost[:, bucket-1], mean)
+                cls.get_min_cost(bucket, prefix_sum, min_cost[:, bucket-1],
+                                 mean)
 
         return min_cost, divider_location
