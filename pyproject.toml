@@ -7,7 +7,7 @@ name = "histoptimizer"
 description = "A library for creating even partitions of ordered items."
 readme = "README.md"
 version = "0.9.1"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 keywords = ["cuda", "numba", "partition"]
 license = {text = "BSD 0-Clause License"}
 classifiers = [
