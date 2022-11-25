@@ -1,8 +1,12 @@
 import pandas as pd
 import numpy as np
 
+
 class Histoptimizer(object):
     """Base class for objects implementing the Histoptimizer API.
+
+    Histoptimizer provides a basic, pure python solution for the linear
+    partition problem with a minimum variance cost function.
 
     """
     name = 'dynamic'
@@ -27,13 +31,13 @@ class Histoptimizer(object):
 
     @classmethod
     def reconstruct_partition(cls, divider_location, num_items, num_buckets):
-        """
+        """Return a list of optimal divider locations given a location matrix.
+
         Arguments:
-            divider_location
-                A matrix giving the
-            num_items
-                The number of items to be partitioned
-            num_buckets
+            divider_location: A matrix giving the location of dividers that
+                minimize variance.
+            num_items: The number of items to be partitioned.
+            num_buckets: The number of buckets to partition the items into.
         """
         if num_buckets < 2:
             return np.array(0)
@@ -47,23 +51,42 @@ class Histoptimizer(object):
         return partitions
 
     @classmethod
-    def get_prefix_sums(cls, items):
+    def get_prefix_sums(cls, item_sizes):
         """
-        Given a list of item sizes, return a NumPy float32 array where the first item is 0.0 and subsequent items are the
-        cumulative sum of the elements of the list.
+        Given a list of item sizes, return a NumPy float32 array where item 0 is
+        0 and item *n* is the cumulative sum of item sizes 0..n-1.
+
+        This transformation of item sizes makes it possible to determine the
+        total size of the items between locations *m* and *n* by a single
+        subtraction: prefix_sums[n] - prefix_sums[m]
 
         Args:
-            items (iterable): A list of item sizes, integer or float.
+            item_sizes (iterable): A list of item sizes, integer or float.
 
         Returns:
             NumPy float32 array containing a [0]-prefixed cumulative sum.
         """
-        prefix_sum = np.zeros((len(items) + 1), dtype=np.float32)
-        prefix_sum[1:] = np.cumsum(items)
+        prefix_sum = np.zeros((len(item_sizes) + 1), dtype=np.float32)
+        prefix_sum[1:] = np.cumsum(item_sizes)
         return prefix_sum
 
     @classmethod
     def init_matrices(cls, num_buckets, prefix_sum):
+        """Create and initialize min_cost and divider_location matrices.
+
+        Creates the two matrices necessary to implement Skiena's algorithm, and
+        initializes the cells where the base relation values are stored.
+
+        Args:
+            num_buckets: The number of
+            prefix_sum: List of item sizes in prefix sum form.
+
+        Returns:
+            A tuple:
+
+            min_cost:
+            divider_location:
+        """
         n = len(prefix_sum)
         min_cost = np.zeros((n, num_buckets + 1), dtype=np.float32)
         divider_location = np.zeros((n, num_buckets + 1), dtype=np.int32)
@@ -85,16 +108,15 @@ class Histoptimizer(object):
         size of each partition is minimized.
 
         Arguments:
-            num_buckets
-                Number of buckets to distribute the items into.
-            prefix_sum
-                List of sums such that prefix_sum[n] = sum(1..n) of item sizes.
-                This representation is more efficient than storing the item
-                sizes themselves, since only this sum is needed.
+            num_buckets: Number of buckets to distribute the items into.
+            prefix_sum: List of sums such that prefix_sum[n] = sum(1..n)
+                of item sizes. This representation is more efficient than
+                storing the item sizes themselves, since only this sum is
+                needed.
+
         Returns:
-            min_cost
-                Matrix giving, For a given [item, divider] combination, the
-                minimum achievable variance for placing [divider-1] dividers
+            min_cost: Matrix giving, For a given [item, divider] combination,
+                the minimum achievable variance for placing [divider-1] dividers
                 between elements 1..item.
             divider_location
                 Last [divider-1] divider location that achieves the matching
@@ -161,6 +183,8 @@ class Histoptimizer(object):
             debug_info: A dictionary that can accept debug information.
 
         Returns:
+            A tuple:
+
             partition_locations: Index of dividers within items. Dividers come
                 after the item in 0-based indexing and before the item in
                 1-based indexing.
@@ -168,9 +192,6 @@ class Histoptimizer(object):
                 `partition_locations`
         """
         num_items = len(item_sizes)
-        #padded_items = [0]
-        #padded_items.extend(item_sizes)
-        #item_sizes = padded_items
 
         prefix_sum = cls.get_prefix_sums(item_sizes)
 
@@ -192,8 +213,7 @@ class Histoptimizer(object):
 
 
 def cuda_supported():
-    """
-    In theory, returns True if Numba is installed and the system has a GPU.
+    """Returns True if Numba is installed and the system has a GPU.
     """
     try:
         from numba import cuda
@@ -203,13 +223,21 @@ def cuda_supported():
         return False
 
 
-def get_partition_sums(dividers, items):
-    """
+def get_partition_sums(dividers, item_sizes):
+    """Get a list of the total sizes of each partition.
+
     Given a list of divider locations and a list of items,
-    return a list the sum of the items in each partition.
+    Return a list the sum of the items in each partition.
+
+    Args:
+        dividers: A list of divider locations.
+        item_sizes: A list of item sizes
+
+    Returns:
+        A list where item N is the sum of the item_sizes
+        in partition N.
     """
-    #  fix this to take and use prefix sums, but only after you
-    #  have written a test.
+    #  TODO: fix this to take and use prefix sums
     partitions = [.0]*(len(dividers)+1)
     for x in range(0, len(dividers)+1):
         if x == 0:
@@ -217,34 +245,38 @@ def get_partition_sums(dividers, items):
         else:
             left_index = dividers[x-1]
         if x == len(dividers):
-            right_index = len(items)
+            right_index = len(item_sizes)
         else:
             right_index = dividers[x]
         for y in range(left_index, right_index):
-            partitions[x] += items[y]
+            partitions[x] += item_sizes[y]
     return partitions
 
 
 def bucket_generator(dividers: np.array, num_items: int):
-    """
-    Iterate over a list of partitions to create a series of bucket numbers for each item in the
-    partitioned series.
+    """Convert divider locations into a series of bucket numbers for items.
+
+    Given a list of divider locations and a total number of items, yield a list
+    with a bucket number item for each item in the original list of items.
+
+    This can be made into a series and concatenated to a data frame to provide
+    a partitioning column.
 
     Args:
-        dividers (NumPY array): A list of divider locations. Dividers are considered as
-        coming before the given list index with 0-based array indexing.
-        num_items (int): The number of items in the list to be partitioned.
+        dividers: A list of divider locations. Dividers are
+            considered as coming before the given list index with 0-based array
+            indexing.
+        num_items: The number of items in the list to be partitioned.
 
-    Returns:
-        Series: A series with an item for each item in the partitioned list, where
-                the value of each item is the bucket number it belongs to, starting
-                with bucket 1.
+    Yields:
+        dividers[0] 1s, followed by divider[1]-divider[0] 2s,
+        divider[2]-divider[1] 3s, ... , num_items-divider[-1] Ns.
 
     Example:
         partitions = [12, 13, 18]  # Three dividers = 4 buckets
         num_items = 20
 
-        Returns [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 3, 3, 3, 4, 4]
+        Yields [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 3, 3, 3, 4, 4]
     """
     for bucket in range(1, len(dividers) + 2):
         if bucket == 1:

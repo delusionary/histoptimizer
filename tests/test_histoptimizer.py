@@ -7,6 +7,7 @@ import pytest
 import json
 import pytest
 import time
+import os
 
 import histoptimizer
 
@@ -24,6 +25,7 @@ from histoptimizer.historical.recursive import RecursiveOptimizer
 from histoptimizer.historical.recursive_cache import RecursiveCacheOptimizer
 from histoptimizer.historical.recursive_verbose import RecursiveVerboseOptimizer
 
+#os.environ['CUDA_HOME'] = 'C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.8'
 
 optimal_partitioners = (
     Histoptimizer,
