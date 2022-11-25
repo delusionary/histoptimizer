@@ -1,5 +1,5 @@
 import numpy as np
-from numba import guvectorize, float32, int64, prange
+from numba import guvectorize, prange
 from histoptimizer import Histoptimizer
 
 

@@ -38,7 +38,7 @@ from histoptimizer.historical.cuda_2 import CUDAOptimizerItemPairs
 from histoptimizer.historical.dynamic_numba_2 import NumbaOptimizerDraft2
 from histoptimizer.historical.dynamic_numba_3 import NumbaOptimizerDraft3
 from histoptimizer.historical.enumerate import EnumeratingOptimizer
-from histoptimizer.historical.numpy_min_max_sum_partition\
+from histoptimizer.historical.numpy_min_max_sum_partition \
     import NumpyMinMaxSumOptimizer
 from histoptimizer.historical.recursive import RecursiveOptimizer
 from histoptimizer.historical.recursive_cache import RecursiveCacheOptimizer

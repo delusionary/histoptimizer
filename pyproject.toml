@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "histoptimizer"
+description = "A library for creating even partitions of ordered items."
+readme = "README.md"
+version = "0.9"
+requires-python = ">=3.10"
+keywords = ["cuda", "numba", "partition"]
+license = {text = "BSD 0-Clause License"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Development Status :: 3 - Alpha",
+    "Topic :: Utilities",
+    "License :: OSI Approved :: BSD License",
+]
+
+dependencies = [
+    "click>=8",
+    "cuda-python>=11",
+    "numba>=0.56",
+    "numpy>=1",
+    "pandas>=1.5",
+    "pytest>=7"
+]
+
+[project.scripts]
+    histoptimizer="histoptimizer.cli:cli"
+    histobench="histoptimizer.benchmark:cli"
+
+#dynamic = ["version"]
+
+#[project.optional-dependencies]
+
+# ... other project metadata fields as specified in:
+#     https://packaging.python.org/en/latest/specifications/declaring-project-metadata/

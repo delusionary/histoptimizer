@@ -14,7 +14,6 @@ TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 """
 import numpy as np
-import os
 from numba import guvectorize
 from histoptimizer import Histoptimizer
 
