@@ -13,5 +13,5 @@
 /datas/numpy_county_dense_many.json
 /datas/pct_trump_buckets.csv
 /datas/pct_trump_buckets_cuda.cs
-/build
-
+/build/
+/dist/
