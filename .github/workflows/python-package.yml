@@ -14,6 +14,11 @@ jobs:
       - uses: Jimver/cuda-toolkit@v0.2.8
         with:
           cuda: '11.7.0'
+      - run: |
+          echo "Installed cuda version is: ${{steps.cuda-toolkit.outputs.cuda}}"
+      - run: |
+          echo "Cuda install location: ${{steps.cuda-toolkit.outputs.CUDA_PATH}}"
+      - run: nvcc -V
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
