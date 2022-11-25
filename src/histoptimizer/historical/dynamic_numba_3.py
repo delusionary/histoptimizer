@@ -1,5 +1,5 @@
 import numpy as np
-from numba import jit, float32, intc, prange, void,
+from numba import jit, float32, intc, prange, void
 from histoptimizer import Histoptimizer
 
 
