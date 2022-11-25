@@ -2,7 +2,7 @@ import numpy as np
 from numba import guvectorize, prange
 from histoptimizer import Histoptimizer
 
-
+# TypeError: No matching definition for argument type(s) int64, array(float32, 1d, C), array(float32, 2d, C), array(int64, 2d, C)
 # os.environ['NUMBA_DISABLE_JIT'] = '1'
 # noinspection DuplicatedCode
 @guvectorize(
@@ -60,7 +60,7 @@ class NumbaOptimizerDraft2(Histoptimizer):
         prefix_sum = cls.get_prefix_sums(items)
 
         #min_cost, divider_location = init_matrices(buckets, prefix_sum)
-        bucket_list = np.zeros((buckets + 1), dtype=int)
+        bucket_list = np.zeros((buckets + 1), dtype=np.int32)
         min_cost, divider_location = build_matrices(bucket_list, buckets, prefix_sum)
 
         if debug_info is not None:
