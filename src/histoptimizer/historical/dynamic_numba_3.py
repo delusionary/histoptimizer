@@ -5,7 +5,7 @@ from histoptimizer import Histoptimizer
 
 # os.environ['NUMBA_DISABLE_JIT'] = '1'
 # noinspection DuplicatedCode
-@jit(void(int32, float32[:], float32[:,:], int32[:,:]))
+@jit(void(int, float[:], float[:,:], int[:,:]))
 def build_matrices(buckets, prefix_sum, min_cost, divider_location):
     n = len(prefix_sum)
     mean = prefix_sum[-1] / buckets
@@ -56,7 +56,7 @@ class NumbaOptimizerDraft3(Histoptimizer):
         """
         prefix_sum = cls.get_prefix_sums(items)
 
-        min_cost = np.zeros((len(prefix_sum), buckets + 1), dtype=np.float32)
+        min_cost = np.zeros((len(prefix_sum), buckets + 1), dtype=float)
         divider_location = np.zeros((len(prefix_sum), buckets + 1), dtype=int)
         build_matrices(buckets, prefix_sum, min_cost, divider_location)
 

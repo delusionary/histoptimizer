@@ -6,7 +6,7 @@ from histoptimizer import Histoptimizer
 # os.environ['NUMBA_DISABLE_JIT'] = '1'
 # noinspection DuplicatedCode
 @guvectorize(
-    ['i4[:], i4, f4[:], f4[:,:], i4[:,:]'],
+    ['intc[:], intc, f4[:], f4[:,:], intc[:,:]'],
     '(k),(),(n)->(n,k),(n,k)',
     nopython=True,
     target='cpu'
@@ -60,7 +60,7 @@ class NumbaOptimizerDraft2(Histoptimizer):
         prefix_sum = cls.get_prefix_sums(items)
 
         #min_cost, divider_location = init_matrices(buckets, prefix_sum)
-        bucket_list = np.zeros((buckets + 1), dtype=np.int32)
+        bucket_list = np.zeros((buckets + 1), dtype=int)
         min_cost, divider_location = build_matrices(bucket_list, buckets, prefix_sum)
 
         if debug_info is not None:

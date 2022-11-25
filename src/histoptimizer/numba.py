@@ -21,7 +21,7 @@ from histoptimizer import Histoptimizer
 
 
 @guvectorize(
-    ['i4, f4[:], f4[:], f4, f4[:], f4[:]'],
+    ['intc, f[:], f[:], f, f[:], f[:]'],
     '(),(m),(n),()->(n),(n)',
     nopython=True,
     target='cpu'
