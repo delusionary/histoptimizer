@@ -1,10 +1,10 @@
 import numpy as np
-from numba import guvectorize, prange, int64, float32, void
+from numba import guvectorize, prange
 from histoptimizer import Histoptimizer
 
 
 @guvectorize(
-    void(int64[:], int64, float32[:], float32[:,:], int64[:,:]),
+    ['int64[:], int64, f4[:], f4[:,:], int64[:,:]'],
     '(k),(),(n)->(n,k),(n,k)',
     nopython=True,
     target='cpu'
