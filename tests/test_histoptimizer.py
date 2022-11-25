@@ -7,10 +7,11 @@ import json
 import pytest
 import time
 
-from src import histoptimizer
-
 from math import isclose
 
+from numba.cuda.cudadrv.error import CudaSupportError, NvvmSupportError
+
+import histoptimizer
 from histoptimizer import Histoptimizer
 from histoptimizer.cuda import CUDAOptimizer
 from histoptimizer.numba import NumbaOptimizer
@@ -23,26 +24,6 @@ from histoptimizer.historical.recursive import RecursiveOptimizer
 from histoptimizer.historical.recursive_cache import RecursiveCacheOptimizer
 from histoptimizer.historical.recursive_verbose import RecursiveVerboseOptimizer
 
-# import os
-# os.environ['CUDA_HOME'] = 'C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.8'
-import os
-os.environ['NUMBA_ENABLE_CUDASIM'] = '1'
-
-
-optimal_partitioners = (
-    Histoptimizer,
-    NumbaOptimizer,
-    CUDAOptimizer,
-    CUDAOptimizerBuckets,
-    CUDAOptimizerItemPairs,
-    NumbaOptimizerDraft2,
-    NumbaOptimizerDraft3,
-    EnumeratingOptimizer,
-    RecursiveOptimizer,
-    RecursiveCacheOptimizer,
-    RecursiveVerboseOptimizer
-)
-
 
 @pytest.fixture()
 def expected_results():
@@ -50,10 +31,28 @@ def expected_results():
         return json.load(file)
 
 
+optimal_partitioners = (
+    Histoptimizer,
+    NumbaOptimizer,
+    NumbaOptimizerDraft2,
+    NumbaOptimizerDraft3,
+    EnumeratingOptimizer,
+    RecursiveOptimizer,
+    RecursiveCacheOptimizer,
+    RecursiveVerboseOptimizer,
+    CUDAOptimizer,
+    CUDAOptimizerBuckets,
+    CUDAOptimizerItemPairs,
+)
+
+
 @pytest.mark.parametrize("partitioner", optimal_partitioners)
 def test_static_correctness(expected_results, partitioner):
     for test in expected_results:
-        dividers, variance = partitioner.partition(test['items'], test['buckets'])
+        try:
+            dividers, variance = partitioner.partition(test['items'], test['buckets'])
+        except (NvvmSupportError, CudaSupportError):
+            pytest.skip("Cuda support not available.")
         test['variance'] = variance
         assert any([list(dividers) == d for d in test['dividers']])
         assert isclose(variance, test['variance'], rel_tol=1e-04)

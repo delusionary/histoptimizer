@@ -25,6 +25,8 @@ import pandas
 import sys
 import re
 
+from numba.cuda.cudadrv.error import CudaSupportError
+
 from histoptimizer import Histoptimizer, histoptimize
 from histoptimizer.cuda import CUDAOptimizer
 from histoptimizer.numba import NumbaOptimizer
