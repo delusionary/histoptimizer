@@ -30,6 +30,11 @@ dependencies = [
     histoptimizer="histoptimizer.cli:cli"
     histobench="histoptimizer.benchmark:cli"
 
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+]
+
 #dynamic = ["version"]
 
 #[project.optional-dependencies]
