@@ -2,9 +2,7 @@ import numpy as np
 from numba import guvectorize, prange
 from histoptimizer import Histoptimizer
 
-# TypeError: No matching definition for argument type(s) int64, array(float32, 1d, C), array(float32, 2d, C), array(int64, 2d, C)
-# os.environ['NUMBA_DISABLE_JIT'] = '1'
-# noinspection DuplicatedCode
+
 @guvectorize(
     ['intc[:], intc, f4[:], f4[:,:], intc[:,:]'],
     '(k),(),(n)->(n,k),(n,k)',

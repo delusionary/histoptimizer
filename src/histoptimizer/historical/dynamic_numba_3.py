@@ -1,11 +1,9 @@
 import numpy as np
-from numba import jit, float32, intc, prange, void
+from numba import jit, float32, int64, prange, void
 from histoptimizer import Histoptimizer
 
 
-# os.environ['NUMBA_DISABLE_JIT'] = '1'
-# noinspection DuplicatedCode
-@jit(void(intc, float32[:], float32[:,:], intc[:,:]))
+@jit(void(int64, float32[:], float32[:,:], int64[:,:]))
 def build_matrices(buckets, prefix_sum, min_cost, divider_location):
     n = len(prefix_sum)
     mean = prefix_sum[-1] / buckets
