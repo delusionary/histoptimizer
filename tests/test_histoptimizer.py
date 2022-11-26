@@ -63,24 +63,24 @@ def test_static_correctness(expected_results, partitioner):
     pass
 
 
-# @pytest.mark.skip(reason='Ad hoc test')
-def test_single_test():
-    debug_info = {}
-    dividers = {}
-    variance = {}
-    elapsed_seconds = {}
-    items = [10, 8, 3, 5, 2]
-    num_buckets = 4
-    for p in (CUDAOptimizer,):
-        debug_info[p] = {}
-        start = time.time()
-        dividers[p], variance[p] = p.partition(items, num_buckets, debug_info=debug_info[p])
-        end = time.time()
-        elapsed_seconds[p] = end - start
-
-    # Ensure the dividers returned are all the same.
-    some_dividers = list(dividers[next(iter(dividers))])
-    assert all([list(dividers[d]) == some_dividers for d in dividers])
+# # @pytest.mark.skip(reason='Ad hoc test')
+# def test_single_test():
+#     debug_info = {}
+#     dividers = {}
+#     variance = {}
+#     elapsed_seconds = {}
+#     items = [10, 8, 3, 5, 2]
+#     num_buckets = 4
+#     for p in (CUDAOptimizer,):
+#         debug_info[p] = {}
+#         start = time.time()
+#         dividers[p], variance[p] = p.partition(items, num_buckets, debug_info=debug_info[p])
+#         end = time.time()
+#         elapsed_seconds[p] = end - start
+#
+#     # Ensure the dividers returned are all the same.
+#     some_dividers = list(dividers[next(iter(dividers))])
+#     assert all([list(dividers[d]) == some_dividers for d in dividers])
 
 
 @pytest.fixture
