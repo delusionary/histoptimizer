@@ -61,6 +61,8 @@ partitioners = {c.name: c for c in (
 
 #  os.environ['NSIGHT_CUDA_DEBUGGER'] = '1'
 
+import os
+os.environ['NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS'] = '0'
 
 def get_system_info() -> dict:
     """
@@ -89,7 +91,7 @@ def partitioner_pivot(df: pd.DataFrame, partitioner) -> pd.DataFrame:
     return df[df.partitioner == partitioner].groupby(
         ['num_items', 'buckets'],
         as_index=False)\
-        .mean()\
+        .mean(numeric_only=True)\
         .pivot(index=['num_items'],
                columns='buckets',
                values='elapsed_seconds')
@@ -154,8 +156,8 @@ def benchmark(partitioner_list: list, item_list: list, bucket_list: list, iterat
                         'dividers': dividers,
                         'items': items
                     })
-            r = r.append(results)
-            mean = r[(r.num_items == num_items) & (r.buckets == num_buckets)].groupby('partitioner').mean()
+            r = pd.concat([r, pd.DataFrame.from_records(results)])
+            mean = r[(r.num_items == num_items) & (r.buckets == num_buckets)].groupby('partitioner').mean(numeric_only=True)
             if verbose:
                 click.echo(f'Items: {num_items} Buckets: {num_buckets} Mean values over {iterations} iterations:')
                 click.echo(f'Partitioner\t\tTime (ms)\t\tVariance')

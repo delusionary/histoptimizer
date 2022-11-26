@@ -7,6 +7,10 @@ import json
 import pytest
 import time
 
+import os
+os.environ['CUDA_LOW_OCCUPANCY_WARNINGS'] = '0'
+
+
 from math import isclose
 
 from numba.cuda.cudadrv.error import CudaSupportError, NvvmSupportError
@@ -59,7 +63,7 @@ def test_static_correctness(expected_results, partitioner):
     pass
 
 
-@pytest.mark.skip(reason='Ad hoc test')
+# @pytest.mark.skip(reason='Ad hoc test')
 def test_single_test():
     debug_info = {}
     dividers = {}
@@ -67,7 +71,7 @@ def test_single_test():
     elapsed_seconds = {}
     items = [10, 8, 3, 5, 2]
     num_buckets = 4
-    for p in (Histoptimizer,):
+    for p in (CUDAOptimizer,):
         debug_info[p] = {}
         start = time.time()
         dividers[p], variance[p] = p.partition(items, num_buckets, debug_info=debug_info[p])

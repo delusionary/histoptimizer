@@ -20,11 +20,15 @@ THIS SOFTWARE.
 import math
 
 from numba import cuda
+from numba.core import config
 import numpy as np
 
 from histoptimizer import Histoptimizer
 
 # import os; os.environ['NUMBA_ENABLE_CUDASIM'] = '1'
+
+#import os
+#os.environ['NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS'] = '0'
 
 threads_per_item_pair = 8
 item_pairs_per_block = 8
@@ -225,6 +229,9 @@ class CUDAOptimizer(Histoptimizer):
             before the item in 1-based indexing.
             min_variance: The variance of the solution defined by partition_locations
         """
+        warnings_enabled = config.CUDA_LOW_OCCUPANCY_WARNINGS
+        config.CUDA_LOW_OCCUPANCY_WARNINGS = False
+
         padded_items = [0]
         padded_items.extend(items)
         items = padded_items
@@ -261,5 +268,7 @@ class CUDAOptimizer(Histoptimizer):
         # Calculate the list of dividers from the min_cost and divider_location matrices
         min_variance, partition_locations = cls.cuda_reconstruct_partition(items,num_buckets, min_cost_gpu, divider_location_gpu)
         cls.add_debug_info(debug_info, divider_location_gpu, items, min_cost_gpu, prefix_sum)
+
+        config.CUDA_LOW_OCCUPANCY_WARNINGS = warnings_enabled
 
         return partition_locations, min_variance
