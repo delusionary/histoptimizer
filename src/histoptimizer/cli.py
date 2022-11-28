@@ -19,13 +19,11 @@ TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 """
 
+import re
+import sys
 
 import click
 import pandas
-import sys
-import re
-
-from numba.cuda.cudadrv.error import CudaSupportError
 
 # If numba CUDA sim is enabled (os.environ['NUMBA_ENABLE_CUDASIM']='1')
 # then the following import will fail, but also the corresponding errors
@@ -43,6 +41,7 @@ from histoptimizer.numba import NumbaOptimizer
 standard_implementations = {c.name: c for c in
                             (Histoptimizer, NumbaOptimizer, CUDAOptimizer)}
 
+
 def set_jit_disable():
     """Enable or disable Numba JIT compilation and CUDA Simulation
     """
@@ -50,6 +49,7 @@ def set_jit_disable():
     # os.environ['NUMBA_DISABLE_JIT'] = '1'
     # os.environ['NUMBA_ENABLE_CUDASIM'] = '1'
     pass
+
 
 def parse_set_spec(spec: str, substitute: dict = None) -> list:
     """
@@ -75,11 +75,13 @@ def parse_set_spec(spec: str, substitute: dict = None) -> list:
         spec = spec.replace(variable, str(value))
     for element in spec.split(','):
         if match := re.match(r'(\d+)(?:-(\d+))?(?::(\d+))?$', element):
-            g = list(map(lambda x: int(x) if x is not None else None, match.groups()))
+            g = list(map(lambda x: int(x) if x is not None else None,
+                         match.groups()))
             if g[2] is not None:
                 # Range and step
                 if g[1] is None:
-                    raise ValueError(f'You must specify a range to specify a step. Cannot parse "{element}"')
+                    raise ValueError(
+                        f'You must specify a range to specify a step. Cannot parse "{element}"')
                 items.extend([x for x in range(g[0], g[1] + 1, g[2])])
             elif g[1] is not None:
                 # Range
@@ -88,9 +90,11 @@ def parse_set_spec(spec: str, substitute: dict = None) -> list:
                 # Single number
                 items.extend([g[0]])
         else:
-            raise ValueError(f'Could not interpret set specification "{element}" ')
+            raise ValueError(
+                f'Could not interpret set specification "{element}" ')
 
     return sorted(list(set(items)))
+
 
 @click.command()
 @click.argument('file', type=click.File('rb'))
@@ -108,16 +112,20 @@ def parse_set_spec(spec: str, substitute: dict = None) -> list:
                    'Defaults to partion_{number of buckets}.')
 @click.option('-s', '--sort-key', type=str, default=None,
               help='Optionally sort records by this column name before partitioning.')
-@click.option('-t', '--timing/--no-timing', default=False, help='Print partitioner timing information to stderr')
+@click.option('-t', '--timing/--no-timing', default=False,
+              help='Print partitioner timing information to stderr')
 @click.option('-i', '--implementation', type=str, default='numba',
               help='Use the named partitioner implementation. Defaults to "dynamic_numba". If you have an NVidia GPU '
-              'use "cuda" for better performance')
+                   'use "cuda" for better performance')
 @click.option('-o', '--output', type=click.File('w'), default=sys.stdout,
               help='Send output to the given file. Defaults to stdout.')
-@click.option('-f', '--output-format', type=click.Choice(['csv', 'json'], case_sensitive=False), default='csv',
+@click.option('-f', '--output-format',
+              type=click.Choice(['csv', 'json'], case_sensitive=False),
+              default='csv',
               help='Specify output format. Pandas JSON or CSV. Defaults to CSV')
 def cli(file, id_column, size_column, partitions, limit, ascending,
-        print_all, column_prefix, sort_key, timing, implementation, output, output_format):
+        print_all, column_prefix, sort_key, timing, implementation, output,
+        output_format):
     """
     Given a CSV, a row name column, a size column, sort key, and a number of buckets, optionally sort the CSV by the
     given key, then distribute the ordered keys as evenly as possible to the given number of buckets.
@@ -162,7 +170,8 @@ def cli(file, id_column, size_column, partitions, limit, ascending,
         sys.exit(1)
 
     if not print_all:
-        data = data[[c for c in [id_column, sort_key, size_column] if c is not None] + partition_columns]
+        data = data[[c for c in [id_column, sort_key, size_column] if
+                     c is not None] + partition_columns]
     if output_format == 'csv':
         data.to_csv(output, index=False)
     elif output_format == 'json':
@@ -171,4 +180,3 @@ def cli(file, id_column, size_column, partitions, limit, ascending,
 
 if __name__ == '__main__':
     cli(sys.argv[1:])
-

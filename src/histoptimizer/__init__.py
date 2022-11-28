@@ -13,8 +13,8 @@ OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
 TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 """
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 class Histoptimizer(object):

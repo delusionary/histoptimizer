@@ -1,5 +1,6 @@
 import numpy as np
 from numba import guvectorize, prange
+
 from histoptimizer import Histoptimizer
 
 
@@ -9,12 +10,12 @@ from histoptimizer import Histoptimizer
     nopython=True,
     target='cpu'
 )
-def build_matrices(bucket_list, buckets, prefix_sum, min_cost, divider_location):
-
+def build_matrices(bucket_list, buckets, prefix_sum, min_cost,
+                   divider_location):
     mean = prefix_sum[-1] / buckets
     for item in range(1, len(prefix_sum)):
         # min_cost[item, 1] = prefix_sum[item]
-        min_cost[item, 1] = (prefix_sum[item] - mean)**2
+        min_cost[item, 1] = (prefix_sum[item] - mean) ** 2
 
     mean = prefix_sum[-1] / (min_cost.shape[1] - 1)
 
@@ -25,7 +26,10 @@ def build_matrices(bucket_list, buckets, prefix_sum, min_cost, divider_location)
             min_cost_tmp = np.inf
             divider_location_tmp = 0
             for previous_item in prange(bucket - 1, item):
-                cost = min_cost[previous_item, bucket - 1] + ((prefix_sum[item] - prefix_sum[previous_item]) - mean) ** 2
+                cost = min_cost[previous_item, bucket - 1] + ((prefix_sum[
+                                                                   item] -
+                                                               prefix_sum[
+                                                                   previous_item]) - mean) ** 2
                 if cost < min_cost_tmp:
                     min_cost_tmp = cost
                     divider_location_tmp = previous_item
@@ -57,9 +61,10 @@ class NumbaOptimizerDraft2(Histoptimizer):
         """
         prefix_sum = cls.get_prefix_sums(items)
 
-        #min_cost, divider_location = init_matrices(buckets, prefix_sum)
+        # min_cost, divider_location = init_matrices(buckets, prefix_sum)
         bucket_list = np.zeros((buckets + 1), dtype=int)
-        min_cost, divider_location = build_matrices(bucket_list, buckets, prefix_sum)
+        min_cost, divider_location = build_matrices(bucket_list, buckets,
+                                                    prefix_sum)
 
         if debug_info is not None:
             debug_info['items'] = items
@@ -67,5 +72,6 @@ class NumbaOptimizerDraft2(Histoptimizer):
             debug_info['min_cost'] = min_cost
             debug_info['divider_location'] = divider_location
 
-        partition = cls.reconstruct_partition(divider_location, len(items), buckets)
+        partition = cls.reconstruct_partition(divider_location, len(items),
+                                              buckets)
         return partition, min_cost[len(items), buckets] / buckets

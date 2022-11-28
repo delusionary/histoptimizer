@@ -1,7 +1,8 @@
 from pathlib import Path
+
 import click.testing
-import pandas as pd
 import numpy as np
+import pandas as pd
 import pytest
 
 import histoptimizer.benchmark as benchmark
@@ -29,9 +30,10 @@ def test_main_succeeds(tmp_path):
     runner = click.testing.CliRunner()
     # FILE ID_COLUMN SIZE_COLUMN PARTITIONS
     runner.invoke(benchmark.cli, ['--sizes-from', 'fixtures/sizes_only.csv',
-                                   '--report', str(report_file),
-                                   'numba,dynamic', '5-6', '3-4', '1'])
-    filed_report = pd.read_json(str(report_file), orient='records').drop(['variance', 'elapsed_seconds'], axis=1)
+                                  '--report', str(report_file),
+                                  'numba,dynamic', '5-6', '3-4', '1'])
+    filed_report = pd.read_json(str(report_file), orient='records').drop(
+        ['variance', 'elapsed_seconds'], axis=1)
     expected_report = pd.read_json('fixtures/benchmark_report.json')
     assert np.array_equal(filed_report.to_numpy(), expected_report.to_numpy())
 
@@ -57,7 +59,6 @@ def test_get_sizes_from_input_validation():
 
 
 def test_partitioner_pivot(pivot_benchmark):
-
     pivot = benchmark.partitioner_pivot(pivot_benchmark, 'dynamic')
 
     expected_dynamic = pd.read_json('fixtures/pivot_dynamic.json')
@@ -78,6 +79,3 @@ def test_echo_tables(pivot_benchmark, partitioner_list, capsys):
 def test_get_system_info():
     result = benchmark.get_system_info()
     assert result
-
-
-

@@ -1,4 +1,5 @@
 import numpy as np
+
 from histoptimizer import Histoptimizer
 
 
@@ -21,13 +22,17 @@ class RecursiveVerboseOptimizer(Histoptimizer):
         # the first bucket.
         if j == 0:
             cost = (sum(items[0:last_item + 1]) - mean) ** 2
-            print(f"  Base case: Items {items[0:last_item + 1]} has cost {cost:.2f} mean={mean:.2f}")
+            print(
+                f"  Base case: Items {items[0:last_item + 1]} has cost {cost:.2f} mean={mean:.2f}")
             return cost, []
 
-        for current_divider_location in range(first_possible_position, last_item + 1):
-            (lh_cost, previous_dividers) = cls.min_cost_partition(items, k - 1, last_item=current_divider_location - 1,
-                                                              mean=mean)
-            rh_cost = (sum(items[current_divider_location:last_item + 1]) - mean) ** 2
+        for current_divider_location in range(first_possible_position,
+                                              last_item + 1):
+            (lh_cost, previous_dividers) = cls.min_cost_partition(items, k - 1,
+                                                                  last_item=current_divider_location - 1,
+                                                                  mean=mean)
+            rh_cost = (sum(items[
+                           current_divider_location:last_item + 1]) - mean) ** 2
             cost = lh_cost + rh_cost
             if cost < best_cost:
                 best_cost = cost
@@ -36,12 +41,11 @@ class RecursiveVerboseOptimizer(Histoptimizer):
             print(f"# Divider {j} after {current_divider_location} -- "
                   f" RH: {items[current_divider_location:last_item + 1]} RH Cost: {rh_cost:.2f}"
                   f" Prev: {lh_cost:.2f} Total: {cost:.2f} Dividers: {previous_dividers + [current_divider_location]}")
-        print(f"** Best Divider {j} location: {dividers[-1]} for first {last_item} items. Cost: {best_cost:.2f} Mean: {mean:.2f} Best Divider series: {dividers}")
+        print(
+            f"** Best Divider {j} location: {dividers[-1]} for first {last_item} items. Cost: {best_cost:.2f} Mean: {mean:.2f} Best Divider series: {dividers}")
         return best_cost, dividers
 
     @classmethod
     def partition(cls, items, k, debug_info=None):
         variance, dividers = cls.min_cost_partition(items, k)
         return dividers, variance / k
-
-

@@ -26,11 +26,12 @@ THIS SOFTWARE.
 """
 import math
 
+import numpy as np
 from numba import cuda
 from numba.core import config
-import numpy as np
 
 from histoptimizer.cuda import CUDAOptimizer
+
 
 @cuda.jit
 def init_items_kernel(min_cost, prefix_sum):
@@ -82,7 +83,9 @@ def cuda_partition_kernel(min_cost, divider_location, prefix_sum, mean):
         # tmp = prefix_sum[prefix_sum.shape[0]-1] + 1
         tmp = np.inf
         for previous_item in range(bucket - 1, item):
-            cost = min_cost[previous_item, bucket - 1] + ((prefix_sum[item] - prefix_sum[previous_item]) - mean[0]) ** 2
+            cost = min_cost[previous_item, bucket - 1] + (
+                        (prefix_sum[item] - prefix_sum[previous_item]) - mean[
+                    0]) ** 2
             if tmp > cost:
                 tmp = cost
                 divider = previous_item
@@ -91,6 +94,7 @@ def cuda_partition_kernel(min_cost, divider_location, prefix_sum, mean):
         # All threads must finish the current item row before we continue.
         # This is probably not true; the previous thread just needs to be done?
         cuda.syncthreads()
+
 
 class CUDAOptimizerBuckets(CUDAOptimizer):
     name = 'cuda_1'
@@ -129,28 +133,36 @@ class CUDAOptimizerBuckets(CUDAOptimizer):
         # Pre-calculate prefix sums for items in the array.
         for item in range(1, len(items)):
             prefix_sum[item] = prefix_sum[item - 1] + items[item]
-            item_cost[item] = (prefix_sum[item] - mean_bucket_sum)**2
+            item_cost[item] = (prefix_sum[item] - mean_bucket_sum) ** 2
 
         prefix_sum_gpu = cuda.to_device(prefix_sum)
-        mean_value_gpu = cuda.to_device(np.array([mean_bucket_sum], dtype=np.float32))
+        mean_value_gpu = cuda.to_device(
+            np.array([mean_bucket_sum], dtype=np.float32))
         item_cost_gpu = cuda.to_device(item_cost)
-        min_cost_gpu = cuda.device_array((len(items), num_buckets+1))
-        divider_location_gpu = cuda.device_array((len(items), num_buckets+1), dtype=np.int32)
+        min_cost_gpu = cuda.device_array((len(items), num_buckets + 1))
+        divider_location_gpu = cuda.device_array((len(items), num_buckets + 1),
+                                                 dtype=np.int32)
 
         threads_per_block = 256
         num_blocks = math.ceil(len(items) / threads_per_block)
-        init_items_kernel[num_blocks, threads_per_block](min_cost_gpu, item_cost_gpu)
+        init_items_kernel[num_blocks, threads_per_block](min_cost_gpu,
+                                                         item_cost_gpu)
         init_buckets_kernel[1, num_buckets](min_cost_gpu, item_cost_gpu)
 
-        cuda_partition_kernel[1, num_buckets-1](min_cost_gpu, divider_location_gpu, prefix_sum_gpu, mean_value_gpu)
+        cuda_partition_kernel[1, num_buckets - 1](min_cost_gpu,
+                                                  divider_location_gpu,
+                                                  prefix_sum_gpu,
+                                                  mean_value_gpu)
 
-        min_variance, partition = cls.cuda_reconstruct_partition(items, num_buckets, min_cost_gpu, divider_location_gpu)
+        min_variance, partition = cls.cuda_reconstruct_partition(items,
+                                                                 num_buckets,
+                                                                 min_cost_gpu,
+                                                                 divider_location_gpu)
 
-        cls.add_debug_info(debug_info, divider_location_gpu, items, min_cost_gpu, prefix_sum)
+        cls.add_debug_info(debug_info, divider_location_gpu, items,
+                           min_cost_gpu, prefix_sum)
 
         # Restore occupancy warning config setting.
         config.CUDA_LOW_OCCUPANCY_WARNINGS = warnings_enabled
 
         return partition, min_variance
-
-

@@ -1,15 +1,16 @@
 import numpy as np
 from numba import jit, float32, int64, prange, void
+
 from histoptimizer import Histoptimizer
 
 
-@jit(void(int64, float32[:], float32[:,:], int64[:,:]))
+@jit(void(int64, float32[:], float32[:, :], int64[:, :]))
 def build_matrices(buckets, prefix_sum, min_cost, divider_location):
     n = len(prefix_sum)
     mean = prefix_sum[-1] / buckets
     for item in range(1, len(prefix_sum)):
         # min_cost[item, 1] = prefix_sum[item]
-        min_cost[item, 1] = (prefix_sum[item] - mean)**2
+        min_cost[item, 1] = (prefix_sum[item] - mean) ** 2
 
     mean = prefix_sum[-1] / (min_cost.shape[1] - 1)
 
@@ -21,7 +22,10 @@ def build_matrices(buckets, prefix_sum, min_cost, divider_location):
             min_cost_tmp = np.inf
             divider_location_tmp = 0
             for previous_item in prange(bucket - 1, item):
-                cost = min_cost[previous_item, bucket - 1] + ((prefix_sum[item] - prefix_sum[previous_item]) - mean) ** 2
+                cost = min_cost[previous_item, bucket - 1] + ((prefix_sum[
+                                                                   item] -
+                                                               prefix_sum[
+                                                                   previous_item]) - mean) ** 2
                 if cost < min_cost_tmp:
                     min_cost_tmp = cost
                     divider_location_tmp = previous_item
@@ -55,7 +59,8 @@ class NumbaOptimizerDraft3(Histoptimizer):
         prefix_sum = cls.get_prefix_sums(items)
 
         min_cost = np.zeros((len(prefix_sum), buckets + 1), dtype=np.float32)
-        divider_location = np.zeros((len(prefix_sum), buckets + 1), dtype=np.int64)
+        divider_location = np.zeros((len(prefix_sum), buckets + 1),
+                                    dtype=np.int64)
         build_matrices(buckets, prefix_sum, min_cost, divider_location)
 
         if debug_info is not None:
@@ -64,5 +69,6 @@ class NumbaOptimizerDraft3(Histoptimizer):
             debug_info['min_cost'] = min_cost
             debug_info['divider_location'] = divider_location
 
-        partition = cls.reconstruct_partition(divider_location, len(items), buckets)
+        partition = cls.reconstruct_partition(divider_location, len(items),
+                                              buckets)
         return partition, min_cost[len(items), buckets] / buckets

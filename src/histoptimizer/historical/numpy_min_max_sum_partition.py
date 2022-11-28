@@ -1,5 +1,7 @@
 import numpy
+
 from histoptimizer import Histoptimizer
+
 
 class NumpyMinMaxSumOptimizer(Histoptimizer):
     name = 'numpy_min_max_sum'
@@ -43,7 +45,8 @@ class NumpyMinMaxSumOptimizer(Histoptimizer):
         for item in range(1, n + 1):
             prefix_sum[item] = prefix_sum[item - 1] + items[item]
 
-        (min_cost, divider_location) = cls.build_matrices(num_buckets, prefix_sum)
+        (min_cost, divider_location) = cls.build_matrices(num_buckets,
+                                                          prefix_sum)
 
         if debug_info is not None:
             debug_info['items'] = items

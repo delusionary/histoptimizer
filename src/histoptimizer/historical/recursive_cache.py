@@ -12,9 +12,12 @@ Given a list of n items, we wish to return a list of divider locations (dividers
 that creates partitions, or buckets, such that the variance/standard deviation between the size of the buckets
 minimized.
 """
-import numpy as np
 import sys
+
+import numpy as np
+
 from histoptimizer import Histoptimizer
+
 
 class RecursiveCacheOptimizer(Histoptimizer):
     name = 'recursive_cache'
@@ -52,10 +55,11 @@ class RecursiveCacheOptimizer(Histoptimizer):
                                               last_item + 1):
             for previous_divider_location in range(j - 1,
                                                    current_divider_location):
-                (lh_cost, previous_dividers) = cls.min_cost_partition(items, k - 1,
-                                                                  last_item=current_divider_location - 1,
-                                                                  mean=mean,
-                                                                  cache=cache)
+                (lh_cost, previous_dividers) = cls.min_cost_partition(items,
+                                                                      k - 1,
+                                                                      last_item=current_divider_location - 1,
+                                                                      mean=mean,
+                                                                      cache=cache)
                 rh_cost = (sum(items[
                                current_divider_location:last_item + 1]) - mean) ** 2
                 cost = lh_cost + rh_cost
@@ -73,4 +77,3 @@ class RecursiveCacheOptimizer(Histoptimizer):
         if debug_info is not None:
             debug_info['cache'] = sys.getsizeof(cache)
         return dividers, variance / k
-

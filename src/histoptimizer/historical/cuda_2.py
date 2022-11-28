@@ -26,11 +26,13 @@ TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 """
 import math
+
+import numpy as np
 from numba import cuda
 from numba.core import config
-import numpy as np
 
 from histoptimizer.cuda import CUDAOptimizer
+
 
 @cuda.jit
 def init_items_kernel(min_cost, prefix_sum):
@@ -50,7 +52,8 @@ def init_buckets_kernel(min_cost, item):
 
 
 @cuda.jit
-def cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items, bucket, mean):
+def cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items,
+                          bucket, mean):
     """
     There is one thread for each pair of items.
     """
@@ -66,7 +69,8 @@ def cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items, buc
         tmp = np.inf
         if first_item >= bucket[0]:
             for previous_item in range(bucket[0] - 1, first_item):
-                rh_cost = ((prefix_sum[first_item] - prefix_sum[previous_item]) - mean[0]) ** 2
+                rh_cost = ((prefix_sum[first_item] - prefix_sum[
+                    previous_item]) - mean[0]) ** 2
                 lh_cost = min_cost[previous_item, bucket[0] - 1]
                 cost = lh_cost + rh_cost
                 if tmp > cost:
@@ -85,7 +89,8 @@ def cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items, buc
     tmp = np.inf
     for previous_item in range(bucket[0] - 1, second_item):
         cost = min_cost[previous_item, bucket[0] - 1] + (
-                    (prefix_sum[second_item] - prefix_sum[previous_item]) - mean[0]) ** 2
+                (prefix_sum[second_item] - prefix_sum[previous_item]) - mean[
+            0]) ** 2
         if tmp > cost:
             tmp = cost
             divider = previous_item
@@ -101,7 +106,6 @@ class CUDAOptimizerItemPairs(CUDAOptimizer):
     @classmethod
     def precompile(cls):
         cls.partition([1, 4, 6, 9], 3)
-
 
     @classmethod
     def partition(cls, items, num_buckets, debug_info=None):
@@ -161,16 +165,15 @@ class CUDAOptimizerItemPairs(CUDAOptimizer):
                 num_items_gpu, bucket_gpu, mean_value_gpu)
 
         min_variance, dividers = cls.cuda_reconstruct_partition(
-                                                        items, num_buckets,
-                                                        min_cost_gpu,
-                                                        divider_location_gpu
+            items, num_buckets,
+            min_cost_gpu,
+            divider_location_gpu
         )
 
         cls.add_debug_info(debug_info, divider_location_gpu, items,
-                       min_cost_gpu, prefix_sum)
+                           min_cost_gpu, prefix_sum)
 
         # Restore occupancy warning config setting.
         config.CUDA_LOW_OCCUPANCY_WARNINGS = warnings_enabled
 
         return dividers, min_variance
-

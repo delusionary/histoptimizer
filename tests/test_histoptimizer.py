@@ -5,7 +5,6 @@ import pandas as pd
 """
 import json
 import pytest
-import time
 
 from math import isclose
 
@@ -57,7 +56,8 @@ optimal_partitioners = (
 def test_static_correctness(expected_results, partitioner):
     for test in expected_results:
         try:
-            dividers, variance = partitioner.partition(test['items'], test['buckets'])
+            dividers, variance = partitioner.partition(test['items'],
+                                                       test['buckets'])
         except (NvvmSupportError, CudaSupportError):
             pytest.skip("Cuda support not available.")
         matching_dividers = [list(dividers) == d for d in test['dividers']]
@@ -65,24 +65,23 @@ def test_static_correctness(expected_results, partitioner):
         assert isclose(variance, test['variance'], rel_tol=1e-04)
     pass
 
-
-# Ad Hoc test
-# def test_single_test():
-#     debug_info = {}
-#     dividers = {}
-#     variance = {}
-#     elapsed_seconds = {}
-#     items = [5, 1, 6, 8, 5]
-#     num_buckets = 3
-#     for pt in (Histoptimizer, CUDAOptimizer):
-#         debug_info[pt.name] = {}
-#         start = time.time()
-#         dividers[pt.name], variance[pt.name] = pt.partition(
-#             items, num_buckets,
-#             debug_info=debug_info[pt.name]
-#         )
-#         end = time.time()
-#         elapsed_seconds[pt.name] = end - start
+    # Ad Hoc test
+    # def test_single_test():
+    #     debug_info = {}
+    #     dividers = {}
+    #     variance = {}
+    #     elapsed_seconds = {}
+    #     items = [5, 1, 6, 8, 5]
+    #     num_buckets = 3
+    #     for pt in (Histoptimizer, CUDAOptimizer):
+    #         debug_info[pt.name] = {}
+    #         start = time.time()
+    #         dividers[pt.name], variance[pt.name] = pt.partition(
+    #             items, num_buckets,
+    #             debug_info=debug_info[pt.name]
+    #         )
+    #         end = time.time()
+    #         elapsed_seconds[pt.name] = end - start
 
     # Ensure the dividers returned are all the same.
     some_dividers = list(dividers[next(iter(dividers))])
@@ -124,7 +123,6 @@ def test_get_prefix_sums():
 
 
 def test_partition_series(partitioner, histo_df):
-
     result = histoptimizer.get_partition_series(histo_df, 3, partitioner)
 
     s = pd.Series([1, 2, 2, 3])
@@ -132,16 +130,17 @@ def test_partition_series(partitioner, histo_df):
 
 
 def test_histoptimize(partitioner, histo_df):
-
-    result, columns = histoptimizer.histoptimize(histo_df, 'sizes', [2, 3], 'partitioner_', partitioner)
+    result, columns = histoptimizer.histoptimize(histo_df, 'sizes', [2, 3],
+                                                 'partitioner_', partitioner)
 
     assert result['partitioner_2'].equals(pd.Series([1, 1, 2, 2]))
     assert result['partitioner_3'].equals(pd.Series([1, 2, 2, 3]))
 
 
 def test_histoptimize_optimal_only(partitioner, histo_df):
-
-    result, columns = histoptimizer.histoptimize(histo_df, 'sizes', [2, 3], 'partitioner_', partitioner, optimal_only=True)
+    result, columns = histoptimizer.histoptimize(histo_df, 'sizes', [2, 3],
+                                                 'partitioner_', partitioner,
+                                                 optimal_only=True)
 
     assert result['partitioner_3'].equals(pd.Series([1, 2, 2, 3]))
     assert set(result.columns) == {'id', 'sizes', 'partitioner_3'}
@@ -162,8 +161,3 @@ def test_check_parameters():
 
     with pytest.raises(ValueError):
         Histoptimizer.check_parameters([1, 2], 1, 'hi')
-
-
-
-
-

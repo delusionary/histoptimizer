@@ -13,7 +13,9 @@ that creates partitions, or buckets, such that the variance/standard deviation b
 minimized.
 """
 import numpy as np
+
 from histoptimizer import Histoptimizer
+
 
 class RecursiveOptimizer(Histoptimizer):
     name = 'recursive'
@@ -35,13 +37,18 @@ class RecursiveOptimizer(Histoptimizer):
         # The base case is that we are being called to find the optimum location of the first divider for a given
         # location of the second divider
         if j == 0:
-            return (sum(items[0:last_item + 1]) - mean)**2, []
+            return (sum(items[0:last_item + 1]) - mean) ** 2, []
 
-        for current_divider_location in range(first_possible_position, last_item + 1):
-            for previous_divider_location in range(j - 1, current_divider_location):
-                (lh_cost, previous_dividers) = cls.min_cost_partition(items, k - 1, last_item=current_divider_location - 1,
-                                                                  mean=mean)
-                rh_cost = (sum(items[current_divider_location:last_item + 1]) - mean) ** 2
+        for current_divider_location in range(first_possible_position,
+                                              last_item + 1):
+            for previous_divider_location in range(j - 1,
+                                                   current_divider_location):
+                (lh_cost, previous_dividers) = cls.min_cost_partition(items,
+                                                                      k - 1,
+                                                                      last_item=current_divider_location - 1,
+                                                                      mean=mean)
+                rh_cost = (sum(items[
+                               current_divider_location:last_item + 1]) - mean) ** 2
                 cost = lh_cost + rh_cost
                 if cost < best_cost:
                     best_cost = cost
@@ -52,4 +59,3 @@ class RecursiveOptimizer(Histoptimizer):
     def partition(cls, items, k, debug_info=None):
         variance, dividers = cls.min_cost_partition(items, k)
         return dividers, variance / k
-

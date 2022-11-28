@@ -1,4 +1,5 @@
 import numpy as np
+
 from histoptimizer import Histoptimizer
 
 
@@ -76,10 +77,10 @@ class EnumeratingOptimizer(Histoptimizer):
         if mean is None:
             mean = sum(items) / num_buckets
 
-        prefix_sums = [0]*len(items)
+        prefix_sums = [0] * len(items)
         prefix_sums[0] = items[0]
         for i in range(1, len(items)):
-            prefix_sums[i] = prefix_sums[i-1] + items[i]
+            prefix_sums[i] = prefix_sums[i - 1] + items[i]
 
         previous_dividers = [0] * (num_buckets - 1)
         variances = [0.0] * num_buckets
@@ -90,18 +91,23 @@ class EnumeratingOptimizer(Histoptimizer):
             # Most of the time, only one divider location has changed.
             # Retain the previous prefix sums and variances to save time.
             # If there are only two buckets, the single divider location has always changed.
-            while num_buckets > 2 and (dividers[divider_index] == previous_dividers[divider_index]):
+            while num_buckets > 2 and (
+                    dividers[divider_index] == previous_dividers[
+                divider_index]):
                 divider_index += 1
             for partition_index in range(0, num_buckets):
                 if divider_index - 1 >= partition_index:
                     pass  # variances[partition_index] already contains the correct value from the previous iteration.
                 elif partition_index == 0:
-                    variances[0] = (prefix_sums[dividers[0] - 1] - mean)**2
+                    variances[0] = (prefix_sums[dividers[0] - 1] - mean) ** 2
                 elif partition_index == (num_buckets - 1):
-                    variances[partition_index] = (prefix_sums[-1] - prefix_sums[dividers[-1] - 1] - mean) ** 2
+                    variances[partition_index] = (prefix_sums[-1] - prefix_sums[
+                        dividers[-1] - 1] - mean) ** 2
                 else:
                     variances[partition_index] = (
-                        (prefix_sums[dividers[partition_index] - 1] - prefix_sums[dividers[partition_index - 1] - 1] - mean) ** 2)
+                            (prefix_sums[dividers[partition_index] - 1] -
+                             prefix_sums[dividers[
+                                             partition_index - 1] - 1] - mean) ** 2)
                 variance += variances[partition_index]
             if variance < min_variance:
                 min_variance = variance
@@ -109,4 +115,3 @@ class EnumeratingOptimizer(Histoptimizer):
             previous_dividers[:] = dividers[:]
 
         return np.array(best_partition), min_variance / num_buckets
-

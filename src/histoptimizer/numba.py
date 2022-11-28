@@ -15,7 +15,9 @@ THIS SOFTWARE.
 """
 import numpy as np
 from numba import guvectorize
+
 from histoptimizer import Histoptimizer
+
 
 @guvectorize(
     ['intc, f4[:], f4[:], f4, f4[:], f4[:]'],
@@ -59,8 +61,8 @@ class NumbaOptimizer(Histoptimizer):
                        num_buckets, prefix_sum):
         mean = prefix_sum[-1] / num_buckets
         for bucket in range(2, min_cost.shape[1]):
-            min_cost[:, bucket], divider_location[:, bucket] =\
-                cls.get_min_cost(bucket, prefix_sum, min_cost[:, bucket-1],
+            min_cost[:, bucket], divider_location[:, bucket] = \
+                cls.get_min_cost(bucket, prefix_sum, min_cost[:, bucket - 1],
                                  mean)
 
         return min_cost, divider_location
