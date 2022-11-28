@@ -32,8 +32,7 @@ threads_per_block = threads_per_item_pair * item_pairs_per_block
 
 @cuda.jit
 def _init_items_kernel(min_cost, prefix_sum):  # pragma: no cover
-    """
-    Initialize column 1 of the min_cost matrix.
+    """Initialize column 1 of the min_cost matrix.
     """
     thread_idx = cuda.threadIdx.x
     block_idx = cuda.blockIdx.x
@@ -45,8 +44,7 @@ def _init_items_kernel(min_cost, prefix_sum):  # pragma: no cover
 
 @cuda.jit
 def _init_buckets_kernel(min_cost, item):  # pragma: no cover
-    """
-    Initialize row 1 of the min_cost matrix.
+    """Initialize row 1 of the min_cost matrix.
     """
     # item is a single-element array
     bucket = cuda.grid(1) + 1
@@ -92,19 +90,22 @@ def _cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items,
     These values are stored in the min_cost and divider_location matrices.
 
     Arguments:
-        min_cost: Matrix from which to read minimum costs from the previous column, and to which to store
-            minimum costs from the current column.
-        divider_location: Matrix to write divider locations which give minimum cost for the current column.
-        prefix_sum: List of the sum of the sizes of all items previous to _i_, for index _i_.
+        min_cost: Matrix from which to read minimum costs from the previous
+            column, and to which to store minimum costs from the current column.
+        divider_location: Matrix to write divider locations which give minimum
+            cost for the current column.
+        prefix_sum: List of the sum of the sizes of all items previous to _i_,
+            for index _i_.
         num_items: The number of items in the problem.
         bucket: The index of the bucket/column for which minimum cost and
                 divider location are to be computed. Single-item GPU array.
         mean: The mean value of the item sizes. Single-item GPU array.
 
     Returns:
-        min_cost: Each item location in the given bucket now contains lowest cost attainable.
-        divider_location: Each item location in the given bucket now contains the divider location that gives
-            lowest cost.
+        min_cost: Each item location in the given bucket now contains lowest
+            cost attainable.
+        divider_location: Each item location in the given bucket now contains
+            the divider location that gives lowest cost.
     """
 
     shared_cost = cuda.shared.array(
@@ -191,12 +192,12 @@ def _cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items,
                     shared_cost[
                         0, item_pair_offset_within_block, item_thread_id + s]:
                 shared_cost[0, item_pair_offset_within_block, item_thread_id] = \
-                shared_cost[
-                    0, item_pair_offset_within_block, item_thread_id + s]
+                    shared_cost[
+                        0, item_pair_offset_within_block, item_thread_id + s]
                 shared_divider[
                     0, item_pair_offset_within_block, item_thread_id] = \
-                shared_divider[
-                    0, item_pair_offset_within_block, item_thread_id + s]
+                    shared_divider[
+                        0, item_pair_offset_within_block, item_thread_id + s]
         cuda.syncthreads()
         s = s * 2
 
@@ -215,12 +216,12 @@ def _cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items,
                     shared_cost[
                         1, item_pair_offset_within_block, item_thread_id + s]:
                 shared_cost[1, item_pair_offset_within_block, item_thread_id] = \
-                shared_cost[
-                    1, item_pair_offset_within_block, item_thread_id + s]
+                    shared_cost[
+                        1, item_pair_offset_within_block, item_thread_id + s]
                 shared_divider[
                     1, item_pair_offset_within_block, item_thread_id] = \
-                shared_divider[
-                    1, item_pair_offset_within_block, item_thread_id + s]
+                    shared_divider[
+                        1, item_pair_offset_within_block, item_thread_id + s]
         cuda.syncthreads()
         s = s * 2
 

@@ -42,6 +42,48 @@ partitioned into the number of buckets reflected in the column name.
 The CLI is a wrapper around the DataFrame functionality that can accept and
 produce either CSV or Pandas JSON files.
 
+```
+Usage: histoptimizer [OPTIONS] FILE ID_COLUMN SIZE_COLUMN PARTITIONS
+
+  Given a CSV, a row name column, a size column, sort key, and a number of
+  buckets, optionally sort the CSV by the given key, then distribute the
+  ordered keys as evenly as possible to the given number of buckets.
+
+  Example:
+
+      > histoptimizer states.csv state_name population 10
+
+      Output:
+
+      state_name, population, partition_10     Wyoming, xxxxxx, 1
+      California, xxxxxxxx, 10
+
+Options:
+  -l, --limit INTEGER             Take the first {limit} records from the
+                                  input, rather than the whole file.
+  -a, --ascending, --asc / -d, --descending, --desc
+                                  If a sort column is provided,
+  --print-all, --all / --no-print-all, --brief
+                                  Output all columns in input, or with
+                                  --brief, only output the ID, size, and
+                                  buckets columns.
+  -c, --column-prefix TEXT        Partition column name prefix. The number of
+                                  buckets will be appended. Defaults to
+                                  partion_{number of buckets}.
+  -s, --sort-key TEXT             Optionally sort records by this column name
+                                  before partitioning.
+  -t, --timing / --no-timing      Print partitioner timing information to
+                                  stderr
+  -i, --implementation TEXT       Use the named partitioner implementation.
+                                  Defaults to "dynamic_numba". If you have an
+                                  NVidia GPU use "cuda" for better performance
+  -o, --output FILENAME           Send output to the given file. Defaults to
+                                  stdout.
+  -f, --output-format [csv|json]  Specify output format. Pandas JSON or CSV.
+                                  Defaults to CSV
+  --help                          Show this message and exit.
+```
+
 ### Benchmarking CLI
 
 The Benchmarking CLI can be used to produce comparative performance metrics for

@@ -42,15 +42,6 @@ standard_implementations = {c.name: c for c in
                             (Histoptimizer, NumbaOptimizer, CUDAOptimizer)}
 
 
-def set_jit_disable():
-    """Enable or disable Numba JIT compilation and CUDA Simulation
-    """
-    # import os
-    # os.environ['NUMBA_DISABLE_JIT'] = '1'
-    # os.environ['NUMBA_ENABLE_CUDASIM'] = '1'
-    pass
-
-
 def parse_set_spec(spec: str, substitute: dict = None) -> list:
     """
     Parse strings representing sets of integers, returning a tuple consisting of all integers in the specified set.
