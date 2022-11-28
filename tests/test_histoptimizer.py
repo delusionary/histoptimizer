@@ -5,6 +5,7 @@ import pandas as pd
 """
 import json
 import pytest
+import time
 
 from math import isclose
 
@@ -64,28 +65,6 @@ def test_static_correctness(expected_results, partitioner):
         assert any(matching_dividers)
         assert isclose(variance, test['variance'], rel_tol=1e-04)
     pass
-
-    # Ad Hoc test
-    # def test_single_test():
-    #     debug_info = {}
-    #     dividers = {}
-    #     variance = {}
-    #     elapsed_seconds = {}
-    #     items = [5, 1, 6, 8, 5]
-    #     num_buckets = 3
-    #     for pt in (Histoptimizer, CUDAOptimizer):
-    #         debug_info[pt.name] = {}
-    #         start = time.time()
-    #         dividers[pt.name], variance[pt.name] = pt.partition(
-    #             items, num_buckets,
-    #             debug_info=debug_info[pt.name]
-    #         )
-    #         end = time.time()
-    #         elapsed_seconds[pt.name] = end - start
-
-    # Ensure the dividers returned are all the same.
-    some_dividers = list(dividers[next(iter(dividers))])
-    assert all([list(dividers[d]) == some_dividers for d in dividers])
 
 
 @pytest.fixture
