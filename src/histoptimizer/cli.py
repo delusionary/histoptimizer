@@ -27,13 +27,21 @@ import re
 
 from numba.cuda.cudadrv.error import CudaSupportError
 
+# If numba CUDA sim is enabled (os.environ['NUMBA_ENABLE_CUDASIM']='1')
+# then the following import will fail, but also the corresponding errors
+# will not happen, so we substitute IOError.
+try:
+    from numba.cuda.cudadrv.error import CudaSupportError, NvvmSupportError
+except ImportError:
+    CudaSupportError = IOError
+    NvvmSupportError = IOError
+
 from histoptimizer import Histoptimizer, histoptimize
 from histoptimizer.cuda import CUDAOptimizer
 from histoptimizer.numba import NumbaOptimizer
 
 standard_implementations = {c.name: c for c in
                             (Histoptimizer, NumbaOptimizer, CUDAOptimizer)}
-
 
 def set_jit_disable():
     """Enable or disable Numba JIT compilation and CUDA Simulation
@@ -114,10 +122,15 @@ def cli(file, id_column, size_column, partitions, limit, ascending,
     Given a CSV, a row name column, a size column, sort key, and a number of buckets, optionally sort the CSV by the
     given key, then distribute the ordered keys as evenly as possible to the given number of buckets.
 
-    > histoptimizer states.csv state_name population 10
-    state_name, population, partition_10
-    Wyoming, xxxxxx, 1
-    California, xxxxxxxx, 10
+    Example:
+
+        > histoptimizer states.csv state_name population 10
+
+        Output:
+
+        state_name, population, partition_10
+        Wyoming, xxxxxx, 1
+        California, xxxxxxxx, 10
     """
     if file.name.endswith('json'):
         data = pandas.read_json(file)
@@ -138,11 +151,15 @@ def cli(file, id_column, size_column, partitions, limit, ascending,
     else:
         raise ValueError(f'Unknown implementation {implementation}')
 
-    data, partition_columns = histoptimize(data,
-                                           size_column,
-                                           bucket_list,
-                                           column_prefix,
-                                           partitioner)
+    try:
+        data, partition_columns = histoptimize(data,
+                                               size_column,
+                                               bucket_list,
+                                               column_prefix,
+                                               partitioner)
+    except (CudaSupportError, NvvmSupportError) as e:
+        click.echo(f"CUDA Error: {e}")
+        sys.exit(1)
 
     if not print_all:
         data = data[[c for c in [id_column, sort_key, size_column] if c is not None] + partition_columns]

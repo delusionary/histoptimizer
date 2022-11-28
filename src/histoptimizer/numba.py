@@ -17,9 +17,6 @@ import numpy as np
 from numba import guvectorize
 from histoptimizer import Histoptimizer
 
-# os.environ['NUMBA_DISABLE_JIT'] = '1'
-
-
 @guvectorize(
     ['intc, f4[:], f4[:], f4, f4[:], f4[:]'],
     '(),(m),(n),()->(n),(n)',

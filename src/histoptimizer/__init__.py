@@ -55,7 +55,6 @@ class Histoptimizer(object):
         if debug_info is not None and not isinstance(debug_info, dict):
             raise ValueError("debug_info should be None or a dictionary")
 
-
     @classmethod
     def reconstruct_partition(cls, divider_location, num_items, num_buckets):
         """Return a list of optimal divider locations given a location matrix.
@@ -159,10 +158,11 @@ class Histoptimizer(object):
                 min_cost_temp = np.inf
                 divider_location_temp = 0
                 for previous_item in range(bucket - 1, item):
-                    cost = min_cost[previous_item, bucket - 1] +\
-                        (
-                            (prefix_sum[item] - prefix_sum[previous_item]) - mean
-                        ) ** 2
+                    cost = min_cost[previous_item, bucket - 1] + \
+                           (
+                                   (prefix_sum[item] - prefix_sum[
+                                       previous_item]) - mean
+                           ) ** 2
 
                     if cost < min_cost_temp:
                         min_cost_temp = cost
@@ -226,29 +226,18 @@ class Histoptimizer(object):
             debug_info['items'] = item_sizes
             debug_info['prefix_sum'] = prefix_sum
             debug_info['min_cost'] = min_cost
-            debug_info['divider_locs'] = divider_locs
+            debug_info['divider_location'] = divider_locs
 
         partition = cls.reconstruct_partition(divider_locs, num_items,
-                                               num_buckets)
+                                              num_buckets)
         return partition, min_cost[num_items, num_buckets] / num_buckets
-
-
-def cuda_supported():
-    """Returns True if Numba is installed and the system has a GPU.
-    """
-    try:
-        from numba import cuda
-        gpus = cuda.gpus
-        return True
-    except (cuda.CudaDriverError, cuda.CudaDriverError):
-        return False
 
 
 def get_partition_sums(dividers, item_sizes):
     """Get a list of the total sizes of each partition.
 
-    Given a list of divider locations and a list of items,
-    Return a list the sum of the items in each partition.
+    Given a list of divider locations and a list of items, return a list the sum
+    of the items in each partition.
 
     Args:
         dividers: A list of divider locations.
@@ -259,12 +248,12 @@ def get_partition_sums(dividers, item_sizes):
         in partition N.
     """
     #  TODO: fix this to take and use prefix sums
-    partitions = [.0]*(len(dividers)+1)
-    for x in range(0, len(dividers)+1):
+    partitions = [.0] * (len(dividers) + 1)
+    for x in range(0, len(dividers) + 1):
         if x == 0:
             left_index = 0
         else:
-            left_index = dividers[x-1]
+            left_index = dividers[x - 1]
         if x == len(dividers):
             right_index = len(item_sizes)
         else:
@@ -314,8 +303,9 @@ def bucket_generator(dividers: np.array, num_items: int):
 
 def get_partition_series(sizes: pd.Series, num_buckets: int, partitioner):
     """
-    Takes a Pandas DataFrame and returns a Series that distributes rows sequentially into the given
-    number of buckets with the minimum possible standard deviation.
+    Takes a Pandas DataFrame and returns a Series that distributes rows
+    sequentially into the given number of buckets with the minimum possible
+    standard deviation.
 
     Args:
         data (DataFrame): The first parameter.
@@ -331,15 +321,17 @@ def get_partition_series(sizes: pd.Series, num_buckets: int, partitioner):
     return pd.Series((b for b in bucket_generator(partitions, len(item_sizes))))
 
 
-def histoptimize(data: pd.DataFrame, sizes: str, bucket_list: list, column_name: str,
+def histoptimize(data: pd.DataFrame, sizes: str, bucket_list: list,
+                 column_name: str,
                  partitioner, optimal_only=False):
     """
-    Histoptimize takes a Pandas DataFrame and adds additional columns, one for each integer
-    in bucket_list.
+    Histoptimize takes a Pandas DataFrame and adds additional columns, one for
+    each integer in bucket_list.
 
-    The additional columns are named `column_name` + {bucket_list[i]} and contain for each
-    row a bucket number such that the rows are distributed into the given number of buckets
-    in such a manner as to minimize the variance/standard deviation over all buckets.
+    The additional columns are named `column_name` + {bucket_list[i]} and
+    contain for each row a bucket number such that the rows are distributed into
+    the given number of buckets in such a manner as to minimize the
+    variance/standard deviation over all buckets.
 
     Args:
         data (DataFrame): The DataFrame to add columns to.
@@ -365,11 +357,14 @@ def histoptimize(data: pd.DataFrame, sizes: str, bucket_list: list, column_name:
             ignore_index=True)
 
     if optimal_only:
-        partitions = partitions[partitions.variance == partitions.variance.min()].iloc[0:1]
+        partitions = partitions[
+                         partitions.variance == partitions.variance.min()].iloc[
+                     0:1]
 
     columns_added = []
     for p in partitions.itertuples():
-        data[p.column_name] = pd.Series((b for b in bucket_generator(p.dividers, len(items))))
+        data[p.column_name] = pd.Series(
+            (b for b in bucket_generator(p.dividers, len(items))))
         columns_added.append(p.column_name)
 
     return data, columns_added

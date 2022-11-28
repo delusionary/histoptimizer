@@ -7,13 +7,16 @@ import json
 import pytest
 import time
 
-import os
-os.environ['CUDA_LOW_OCCUPANCY_WARNINGS'] = '0'
-
-
 from math import isclose
 
-from numba.cuda.cudadrv.error import CudaSupportError, NvvmSupportError
+# If numba CUDA sim is enabled (os.environ['NUMBA_ENABLE_CUDASIM']='1')
+# then the following import will fail, but also the corresponding errors
+# will not happen, so we substitute IOError.
+try:
+    from numba.cuda.cudadrv.error import CudaSupportError, NvvmSupportError
+except ImportError:
+    CudaSupportError = IOError
+    NvvmSupportError = IOError
 
 import histoptimizer
 from histoptimizer import Histoptimizer
@@ -57,30 +60,33 @@ def test_static_correctness(expected_results, partitioner):
             dividers, variance = partitioner.partition(test['items'], test['buckets'])
         except (NvvmSupportError, CudaSupportError):
             pytest.skip("Cuda support not available.")
-        test['variance'] = variance
-        assert any([list(dividers) == d for d in test['dividers']])
+        matching_dividers = [list(dividers) == d for d in test['dividers']]
+        assert any(matching_dividers)
         assert isclose(variance, test['variance'], rel_tol=1e-04)
     pass
 
 
-# # @pytest.mark.skip(reason='Ad hoc test')
+# Ad Hoc test
 # def test_single_test():
 #     debug_info = {}
 #     dividers = {}
 #     variance = {}
 #     elapsed_seconds = {}
-#     items = [10, 8, 3, 5, 2]
-#     num_buckets = 4
-#     for p in (CUDAOptimizer,):
-#         debug_info[p] = {}
+#     items = [5, 1, 6, 8, 5]
+#     num_buckets = 3
+#     for pt in (Histoptimizer, CUDAOptimizer):
+#         debug_info[pt.name] = {}
 #         start = time.time()
-#         dividers[p], variance[p] = p.partition(items, num_buckets, debug_info=debug_info[p])
+#         dividers[pt.name], variance[pt.name] = pt.partition(
+#             items, num_buckets,
+#             debug_info=debug_info[pt.name]
+#         )
 #         end = time.time()
-#         elapsed_seconds[p] = end - start
-#
-#     # Ensure the dividers returned are all the same.
-#     some_dividers = list(dividers[next(iter(dividers))])
-#     assert all([list(dividers[d]) == some_dividers for d in dividers])
+#         elapsed_seconds[pt.name] = end - start
+
+    # Ensure the dividers returned are all the same.
+    some_dividers = list(dividers[next(iter(dividers))])
+    assert all([list(dividers[d]) == some_dividers for d in dividers])
 
 
 @pytest.fixture
@@ -99,10 +105,6 @@ def partitioner():
 @pytest.fixture
 def histo_df():
     return pd.DataFrame({'id': [1, 2, 3, 4], 'sizes': [10, 20, 30, 40]})
-
-
-def test_cuda_supported():
-    assert histoptimizer.cuda_supported() or True
 
 
 def test_get_partition_sums():

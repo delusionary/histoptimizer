@@ -160,9 +160,9 @@ def benchmark(partitioner_list: list, item_list: list, bucket_list: list, iterat
             mean = r[(r.num_items == num_items) & (r.buckets == num_buckets)].groupby('partitioner').mean(numeric_only=True)
             if verbose:
                 click.echo(f'Items: {num_items} Buckets: {num_buckets} Mean values over {iterations} iterations:')
-                click.echo(f'Partitioner\t\tTime (ms)\t\tVariance')
+                click.echo(f'Partitioner\t\tTime (ms)\t\tVariance\t\tDividers')
                 for partitioner, record in mean.iterrows():
-                    click.echo(f'{partitioner}\t\t\t{record.elapsed_seconds * 1000:.2f}\t\t\t{record.variance:.4f}')
+                    click.echo(f'{partitioner}\t\t\t{record.elapsed_seconds * 1000:.2f}\t\t\t{record.variance:.4f}\t\t{list(dividers)}')
     return r
 
 
