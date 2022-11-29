@@ -47,8 +47,6 @@ partitioners = {c.name: c for c in (
     NumbaOptimizer,
     CUDAOptimizerBuckets,
     CUDAOptimizerItemPairs,
-    NumbaOptimizerDraft2,
-    NumbaOptimizerDraft3,
     EnumeratingOptimizer,
     NumpyMinMaxSumOptimizer,
     RecursiveOptimizer,
