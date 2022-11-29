@@ -31,8 +31,8 @@ threads_per_block = threads_per_pair * item_pairs_per_block
 
 
 @cuda.jit
-def _init_items_kernel(min_cost, divider_location,
-                       prefix_sum):  # pragma: no cover
+def init_items_kernel(min_cost, divider_location,
+                      prefix_sum):  # pragma: no cover
     """Initialize column 1 of the min_cost matrix.
     """
     thread_idx = cuda.threadIdx.x
@@ -47,7 +47,7 @@ def _init_items_kernel(min_cost, divider_location,
 
 
 @cuda.jit
-def _init_buckets_kernel(min_cost, divider_location, item):  # pragma: no cover
+def init_buckets_kernel(min_cost, divider_location, item):  # pragma: no cover
     """Initialize row 1 of the min_cost matrix.
     """
     # item is a single-element array
@@ -314,12 +314,12 @@ class CUDAOptimizer(Histoptimizer):
         # Initialize row 1 and column 1 of the min_cost matrix. These could be handled
         # Using logic in the main kernel, but it does not appear to improve performance.
         num_blocks = math.ceil(len(items) / threads_per_block)
-        _init_items_kernel[num_blocks, threads_per_block](min_cost_gpu,
-                                                          divider_location_gpu,
-                                                          item_cost_gpu)
-        _init_buckets_kernel[1, num_buckets](min_cost_gpu,
-                                             divider_location_gpu,
-                                             item_cost_gpu)
+        init_items_kernel[num_blocks, threads_per_block](min_cost_gpu,
+                                                         divider_location_gpu,
+                                                         item_cost_gpu)
+        init_buckets_kernel[1, num_buckets](min_cost_gpu,
+                                            divider_location_gpu,
+                                            item_cost_gpu)
 
         # Invoke the main computation kernel once for each bucket.
         # Each pair of items (n/2) will have _threads_per_item_pair_ threads.

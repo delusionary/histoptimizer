@@ -9,7 +9,7 @@ import time
 
 from math import isclose
 
-# If numba CUDA sim is enabled (os.environ['NUMBA_ENABLE_CUDASIM']='1')
+# If Numba CUDA sim is enabled (os.environ['NUMBA_ENABLE_CUDASIM']=='1')
 # then the following import will fail, but also the corresponding errors
 # will not happen, so we substitute IOError.
 try:
@@ -32,12 +32,23 @@ from histoptimizer.historical.recursive_verbose import RecursiveVerboseOptimizer
 
 @pytest.fixture()
 def expected_results():
+    """Expected results for variance-minimizing partitioners.
+
+    If you find a correctness bug, add the regression test case
+    to this file.
+    """
     with open('fixtures/expected_results.json') as file:
         return json.load(file)
 
 
 @pytest.fixture()
 def min_cost_divider_tests():
+    """Matrix correctness test fixtures.
+
+    These matrix correctness fixtures are generated, random
+    optimization problems. They are segregated from `expected_results`
+    to keep that fixture easily human-readable.
+    """
     with open('fixtures/min_cost_divider_tests.json') as file:
         return json.load(file)
 
@@ -52,6 +63,16 @@ optimal_partitioners = (
     CUDAOptimizer,
     CUDAOptimizerBuckets,
     CUDAOptimizerItemPairs,
+)
+
+# These dynamic-programming partitioners store and return min_cost and
+# divider_location arrays that can be tested for correctness.
+dynamic_partitioners = (
+    Histoptimizer,
+    NumbaOptimizer,
+    CUDAOptimizer,
+    CUDAOptimizerBuckets,
+    CUDAOptimizerItemPairs
 )
 
 
@@ -73,7 +94,7 @@ def test_static_correctness(expected_results, partitioner, value):
 
 
 @pytest.mark.parametrize("artifact", ('min_cost', 'divider_location'))
-@pytest.mark.parametrize("partitioner", optimal_partitioners)
+@pytest.mark.parametrize("partitioner", dynamic_partitioners)
 def test_matrix_correctness(min_cost_divider_tests, partitioner, artifact):
     for test in min_cost_divider_tests:
         debug_info = {}
@@ -84,41 +105,47 @@ def test_matrix_correctness(min_cost_divider_tests, partitioner, artifact):
         except (NvvmSupportError, CudaSupportError):
             pytest.skip("Cuda support not available.")
 
-        test_divider_location = debug_info['divider_location']
-        test_min_cost = debug_info['min_cost'][:1, :1]
+        # Column 0 and row 0 do not affect results; we remove them
+        # to avoid brittleness/spurious failures.
+
         if artifact == "divider_location":
-            expected_divider_location = np.array(test['divider_location'])
+            # Remove unreferenced row/column to avoid spurious failures.
+            test_divider_location = debug_info['divider_location'][1:, 1:]
+            ref_divider_location = np.array(test['divider_location'])[1:, 1:]
             equals = np.equal(
-                expected_divider_location,
+                ref_divider_location,
                 test_divider_location
             )
-            infinities = np.isinf(debug_info['divider_location'])
-            divider_location_match = np.all(
-                np.logical_or(
-                    equals,
-                    infinities
-                )
-            )
+            divider_location_match = np.all(equals)
             if not divider_location_match:
                 pass
-            assert divider_location_match == True
+            assert divider_location_match
         elif artifact == "min_cost":
-            expected_min_cost = np.array(test['min_cost'])[1:, 1:]
-            isclose = np.isclose(
-                np.array(test['min_cost']),
-                debug_info['min_cost'],
+            # Remove unreferenced row/column to avoid spurious failures.
+            test_min_cost = debug_info['min_cost'][1:, 1:]
+            ref_min_cost = np.array(test['min_cost'])[1:, 1:]
+            min_cost_isclose = np.isclose(
+                test_min_cost,
+                ref_min_cost,
                 atol=0.00001
             )
-            infinities = np.isinf(debug_info['min_cost'])
+            infinities = np.isinf(test_min_cost)
+            ref_infinities = np.isinf(ref_min_cost)
+            same_infinities = np.all(np.equal(infinities, ref_infinities))
+
+            if not same_infinities:
+                pass
+            assert same_infinities
+
             min_cost_match = np.all(
                 np.logical_or(
-                    isclose,
+                    min_cost_isclose,
                     infinities,
                 )
             )
             if not min_cost_match:
                 pass
-            assert min_cost_match == True
+            assert min_cost_match
 
 
 @pytest.fixture

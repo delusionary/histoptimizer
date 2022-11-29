@@ -31,24 +31,8 @@ import numpy as np
 from numba import cuda
 from numba.core import config
 
-from histoptimizer.cuda import CUDAOptimizer
-
-
-@cuda.jit
-def init_items_kernel(min_cost, prefix_sum):
-    thread_idx = cuda.threadIdx.x
-    block_idx = cuda.blockIdx.x
-    block_size = cuda.blockDim.x
-    item = thread_idx + (block_idx * block_size)
-    if item < prefix_sum.size:  # Check array boundaries
-        min_cost[item, 1] = prefix_sum[item]
-
-
-@cuda.jit
-def init_buckets_kernel(min_cost, item):
-    # item is a single-element array
-    bucket = cuda.grid(1) + 1
-    min_cost[1, bucket] = item[1]
+from histoptimizer.cuda import CUDAOptimizer, init_items_kernel, \
+    init_buckets_kernel
 
 
 @cuda.jit
@@ -153,9 +137,11 @@ class CUDAOptimizerItemPairs(CUDAOptimizer):
         threads_per_block = 1024
         num_blocks = math.ceil((len(items) / 2) / threads_per_block)
         init_items_kernel[num_blocks, threads_per_block](min_cost_gpu,
+                                                         divider_location_gpu,
                                                          item_cost_gpu)  # prefix_sum_gpu)
         # We don't really need this, could be a special case in kernel.
         init_buckets_kernel[1, num_buckets](min_cost_gpu,
+                                            divider_location_gpu,
                                             item_cost_gpu)  # prefix_sum_gpu)
 
         for bucket in range(2, num_buckets + 1):

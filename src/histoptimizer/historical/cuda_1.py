@@ -32,41 +32,8 @@ from numba.core import config
 
 from histoptimizer.cuda import CUDAOptimizer
 
-
-@cuda.jit
-def init_items_kernel(min_cost, prefix_sum):
-    """Initialize the first column of min_cost.
-
-    The effect of running this kernel is that the first column of the min_cost
-    array, which is zero when initially allocated, is set to the prefix sum
-    of the corresponding item.
-
-    Args:
-        min_cost: Minimum cost array. A GPU Array.
-        prefix_sum: Prefix sum of item sizes array. A GPU Array.
-    """
-    thread_idx = cuda.threadIdx.x
-    block_idx = cuda.blockIdx.x
-    block_size = cuda.blockDim.x
-    item = thread_idx + (block_idx * block_size)
-    if item < prefix_sum.size:  # Check array boundaries
-        min_cost[item, 1] = prefix_sum[item]
-
-
-@cuda.jit
-def init_buckets_kernel(min_cost, item):
-    """Initializes the first row of the min_cost array.
-
-    This kernel initializes the first row of the min_cost array to the given
-    item size.
-
-    Args:
-        min_cost: Minimum cost array. A GPU Array.
-        item: A one-element array. A GPU Array.
-    """
-    # item is a single-element array
-    bucket = cuda.grid(1) + 1
-    min_cost[1, bucket] = item[1]
+from histoptimizer.cuda import CUDAOptimizer, init_items_kernel, \
+    init_buckets_kernel
 
 
 @cuda.jit
@@ -84,8 +51,8 @@ def cuda_partition_kernel(min_cost, divider_location, prefix_sum, mean):
         tmp = np.inf
         for previous_item in range(bucket - 1, item):
             cost = min_cost[previous_item, bucket - 1] + (
-                        (prefix_sum[item] - prefix_sum[previous_item]) - mean[
-                    0]) ** 2
+                    (prefix_sum[item] - prefix_sum[previous_item]) - mean[
+                0]) ** 2
             if tmp > cost:
                 tmp = cost
                 divider = previous_item
@@ -146,8 +113,11 @@ class CUDAOptimizerBuckets(CUDAOptimizer):
         threads_per_block = 256
         num_blocks = math.ceil(len(items) / threads_per_block)
         init_items_kernel[num_blocks, threads_per_block](min_cost_gpu,
+                                                         divider_location_gpu,
                                                          item_cost_gpu)
-        init_buckets_kernel[1, num_buckets](min_cost_gpu, item_cost_gpu)
+        init_buckets_kernel[1, num_buckets](min_cost_gpu,
+                                            divider_location_gpu,
+                                            item_cost_gpu)
 
         cuda_partition_kernel[1, num_buckets - 1](min_cost_gpu,
                                                   divider_location_gpu,
