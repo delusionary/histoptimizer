@@ -38,6 +38,12 @@ def expected_results():
         return json.load(file)
 
 
+@pytest.fixture()
+def min_cost_divider_tests():
+    with open('fixtures/min_cost_divider_tests.json') as file:
+        return json.load(file)
+
+
 optimal_partitioners = (
     Histoptimizer,
     NumbaOptimizer,
@@ -53,18 +59,70 @@ optimal_partitioners = (
 )
 
 
+@pytest.mark.parametrize("value", ("dividers", "variance"))
 @pytest.mark.parametrize("partitioner", optimal_partitioners)
-def test_static_correctness(expected_results, partitioner):
+def test_static_correctness(expected_results, partitioner, value):
     for test in expected_results:
         try:
-            dividers, variance = partitioner.partition(test['items'],
-                                                       test['buckets'])
+            dividers, variance = partitioner.partition(test['item_sizes'],
+                                                       test['num_buckets'])
         except (NvvmSupportError, CudaSupportError):
             pytest.skip("Cuda support not available.")
         matching_dividers = [list(dividers) == d for d in test['dividers']]
-        assert any(matching_dividers)
-        assert isclose(variance, test['variance'], rel_tol=1e-04)
+        if value == "dividers":
+            assert any(matching_dividers)
+        elif value == "variance":
+            assert isclose(variance, test['variance'], rel_tol=1e-04)
     pass
+
+
+@pytest.mark.parametrize("artifact", ('min_cost', 'divider_location'))
+@pytest.mark.parametrize("partitioner", optimal_partitioners)
+def test_matrix_correctness(min_cost_divider_tests, partitioner, artifact):
+    for test in min_cost_divider_tests:
+        debug_info = {}
+        try:
+            dividers, variance = partitioner.partition(test['item_sizes'],
+                                                       test['num_buckets'],
+                                                       debug_info)
+        except (NvvmSupportError, CudaSupportError):
+            pytest.skip("Cuda support not available.")
+
+        test_divider_location = debug_info['divider_location']
+        test_min_cost = debug_info['min_cost'][:1, :1]
+        if artifact == "divider_location":
+            expected_divider_location = np.array(test['divider_location'])
+            equals = np.equal(
+                expected_divider_location,
+                test_divider_location
+            )
+            infinities = np.isinf(debug_info['divider_location'])
+            divider_location_match = np.all(
+                np.logical_or(
+                    equals,
+                    infinities
+                )
+            )
+            if not divider_location_match:
+                pass
+            assert divider_location_match == True
+        elif artifact == "min_cost":
+            expected_min_cost = np.array(test['min_cost'])[1:, 1:]
+            isclose = np.isclose(
+                np.array(test['min_cost']),
+                debug_info['min_cost'],
+                atol=0.00001
+            )
+            infinities = np.isinf(debug_info['min_cost'])
+            min_cost_match = np.all(
+                np.logical_or(
+                    isclose,
+                    infinities,
+                )
+            )
+            if not min_cost_match:
+                pass
+            assert min_cost_match == True
 
 
 @pytest.fixture
