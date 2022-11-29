@@ -24,8 +24,6 @@ from histoptimizer.cuda import CUDAOptimizer
 from histoptimizer.numba import NumbaOptimizer
 from histoptimizer.historical.cuda_1 import CUDAOptimizerBuckets
 from histoptimizer.historical.cuda_2 import CUDAOptimizerItemPairs
-from histoptimizer.historical.dynamic_numba_2 import NumbaOptimizerDraft2
-from histoptimizer.historical.dynamic_numba_3 import NumbaOptimizerDraft3
 from histoptimizer.historical.enumerate import EnumeratingOptimizer
 from histoptimizer.historical.recursive import RecursiveOptimizer
 from histoptimizer.historical.recursive_cache import RecursiveCacheOptimizer
@@ -47,8 +45,6 @@ def min_cost_divider_tests():
 optimal_partitioners = (
     Histoptimizer,
     NumbaOptimizer,
-    NumbaOptimizerDraft2,
-    NumbaOptimizerDraft3,
     EnumeratingOptimizer,
     RecursiveOptimizer,
     RecursiveCacheOptimizer,

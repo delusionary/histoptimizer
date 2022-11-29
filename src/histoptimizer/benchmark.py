@@ -33,8 +33,6 @@ from histoptimizer.cli import parse_set_spec
 from histoptimizer.cuda import CUDAOptimizer
 from histoptimizer.historical.cuda_1 import CUDAOptimizerBuckets
 from histoptimizer.historical.cuda_2 import CUDAOptimizerItemPairs
-from histoptimizer.historical.dynamic_numba_2 import NumbaOptimizerDraft2
-from histoptimizer.historical.dynamic_numba_3 import NumbaOptimizerDraft3
 from histoptimizer.historical.enumerate import EnumeratingOptimizer
 from histoptimizer.historical.numpy_min_max_sum_partition \
     import NumpyMinMaxSumOptimizer
@@ -164,7 +162,7 @@ def benchmark(partitioner_list: list, item_list: list, bucket_list: list,
                     })
             r = pd.concat([r, pd.DataFrame.from_records(results)])
             mean = r[(r.num_items == num_items) & (
-                        r.buckets == num_buckets)].groupby('partitioner').mean(
+                    r.buckets == num_buckets)].groupby('partitioner').mean(
                 numeric_only=True)
             if verbose:
                 click.echo(
