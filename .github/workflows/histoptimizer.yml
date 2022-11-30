@@ -1,6 +1,10 @@
 name: Histoptimizer@3.10 Build Test Coverage
 on: [push]
 
+env:
+  NUMBA_DISABLE_JIT: 1
+  NUMBA_ENABLE_CUDASIM: 1
+
 jobs:
   build:
 
