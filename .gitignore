@@ -1,6 +1,6 @@
-/datas
-/build
-/dist
-/old_optimizers
-.coverage
-
+/datas/
+/build/
+/dist/
+/old_optimizers/
+/.coverage/
+/.idea/
