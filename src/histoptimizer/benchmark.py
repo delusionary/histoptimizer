@@ -31,11 +31,8 @@ import pandas as pd
 from histoptimizer import Histoptimizer
 from histoptimizer.cli import parse_set_spec
 from histoptimizer.cuda import CUDAOptimizer
-from histoptimizer.historical.cuda_1 import CUDAOptimizerBuckets
 from histoptimizer.historical.cuda_2 import CUDAOptimizerItemPairs
 from histoptimizer.historical.enumerate import EnumeratingOptimizer
-from histoptimizer.historical.numpy_min_max_sum_partition \
-    import NumpyMinMaxSumOptimizer
 from histoptimizer.historical.recursive import RecursiveOptimizer
 from histoptimizer.historical.recursive_cache import RecursiveCacheOptimizer
 from histoptimizer.historical.recursive_verbose import RecursiveVerboseOptimizer
@@ -45,10 +42,8 @@ partitioners = {c.name: c for c in (
     Histoptimizer,
     CUDAOptimizer,
     NumbaOptimizer,
-    CUDAOptimizerBuckets,
     CUDAOptimizerItemPairs,
     EnumeratingOptimizer,
-    NumpyMinMaxSumOptimizer,
     RecursiveOptimizer,
     RecursiveCacheOptimizer,
     RecursiveVerboseOptimizer,

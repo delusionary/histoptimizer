@@ -22,7 +22,6 @@ import histoptimizer
 from histoptimizer import Histoptimizer
 from histoptimizer.cuda import CUDAOptimizer
 from histoptimizer.numba import NumbaOptimizer
-from histoptimizer.historical.cuda_1 import CUDAOptimizerBuckets
 from histoptimizer.historical.cuda_2 import CUDAOptimizerItemPairs
 from histoptimizer.historical.enumerate import EnumeratingOptimizer
 from histoptimizer.historical.recursive import RecursiveOptimizer
@@ -61,7 +60,6 @@ optimal_partitioners = (
     RecursiveCacheOptimizer,
     RecursiveVerboseOptimizer,
     CUDAOptimizer,
-    CUDAOptimizerBuckets,
     CUDAOptimizerItemPairs,
 )
 
@@ -71,7 +69,6 @@ dynamic_partitioners = (
     Histoptimizer,
     NumbaOptimizer,
     CUDAOptimizer,
-    CUDAOptimizerBuckets,
     CUDAOptimizerItemPairs
 )
 

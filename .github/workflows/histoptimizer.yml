@@ -1,5 +1,11 @@
-name: Histoptimizer@3.10 Build Test Coverage
+name: Histoptimizer@3.10 Test Coverage
 on: [push]
+
+# Disabling JIT and enabling the CUDA simulator makes the tests much slower,
+# but improves test coverage.
+env:
+  NUMBA_DISABLE_JIT: 1
+  NUMBA_ENABLE_CUDASIM: 1
 
 jobs:
   build:
