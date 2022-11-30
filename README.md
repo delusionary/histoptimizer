@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/github/delusionary/histoptimizer/branch/main/graph/badge.svg?token=FCLW50JSR9)](https://codecov.io/github/delusionary/histoptimizer)
+
 # Histoptimizer
 
 ## Overview
