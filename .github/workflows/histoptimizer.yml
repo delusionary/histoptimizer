@@ -30,6 +30,6 @@ jobs:
       - name: Test with pytest
         working-directory: ./tests
         run: |
-          pytest --cov=histoptimizer
+          pytest --cov-report xml --cov=histoptimizer
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
