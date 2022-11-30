@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
+requires = ["setuptools", "setuptools-scm", ]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -22,7 +22,8 @@ dependencies = [
     "numba>=0.56",
     "numpy>=1",
     "pandas>=1.5",
-    "pytest>=7"
+    "pytest>=7",
+    "pytest-cov>=4"
 ]
 
 [project.scripts]
