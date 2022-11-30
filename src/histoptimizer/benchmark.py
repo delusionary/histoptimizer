@@ -35,7 +35,6 @@ from histoptimizer.historical.cuda_2 import CUDAOptimizerItemPairs
 from histoptimizer.historical.enumerate import EnumeratingOptimizer
 from histoptimizer.historical.recursive import RecursiveOptimizer
 from histoptimizer.historical.recursive_cache import RecursiveCacheOptimizer
-from histoptimizer.historical.recursive_verbose import RecursiveVerboseOptimizer
 from histoptimizer.numba import NumbaOptimizer
 
 partitioners = {c.name: c for c in (
@@ -46,7 +45,6 @@ partitioners = {c.name: c for c in (
     EnumeratingOptimizer,
     RecursiveOptimizer,
     RecursiveCacheOptimizer,
-    RecursiveVerboseOptimizer,
 )}
 
 #  os.environ['NSIGHT_CUDA_DEBUGGER'] = '1'

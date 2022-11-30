@@ -26,7 +26,6 @@ from histoptimizer.historical.cuda_2 import CUDAOptimizerItemPairs
 from histoptimizer.historical.enumerate import EnumeratingOptimizer
 from histoptimizer.historical.recursive import RecursiveOptimizer
 from histoptimizer.historical.recursive_cache import RecursiveCacheOptimizer
-from histoptimizer.historical.recursive_verbose import RecursiveVerboseOptimizer
 
 
 @pytest.fixture()
@@ -58,7 +57,6 @@ optimal_partitioners = (
     EnumeratingOptimizer,
     RecursiveOptimizer,
     RecursiveCacheOptimizer,
-    RecursiveVerboseOptimizer,
     CUDAOptimizer,
     CUDAOptimizerItemPairs,
 )
