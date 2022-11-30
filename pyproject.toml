@@ -12,7 +12,7 @@ keywords = ["cuda", "numba", "partition"]
 license = {text = "BSD 0-Clause License"}
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Topic :: Utilities",
     "License :: OSI Approved :: BSD License",
 ]
