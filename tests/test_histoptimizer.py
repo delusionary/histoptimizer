@@ -21,7 +21,7 @@ except ImportError:
 import histoptimizer
 from histoptimizer import Histoptimizer
 from histoptimizer.cuda import CUDAOptimizer
-from histoptimizer.numba import NumbaOptimizer
+from histoptimizer.numba_optimizer import NumbaOptimizer
 from histoptimizer.historical.cuda_2 import CUDAOptimizerItemPairs
 from histoptimizer.historical.enumerate import EnumeratingOptimizer
 from histoptimizer.historical.recursive import RecursiveOptimizer

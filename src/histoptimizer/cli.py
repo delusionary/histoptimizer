@@ -36,7 +36,7 @@ except ImportError:
 
 from histoptimizer import Histoptimizer, histoptimize
 from histoptimizer.cuda import CUDAOptimizer
-from histoptimizer.numba import NumbaOptimizer
+from histoptimizer.numba_optimizer import NumbaOptimizer
 
 standard_implementations = {c.name: c for c in
                             (Histoptimizer, NumbaOptimizer, CUDAOptimizer)}

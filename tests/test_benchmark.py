@@ -6,7 +6,7 @@ import pytest
 
 import histoptimizer.benchmark as benchmark
 from histoptimizer import Histoptimizer
-from histoptimizer.numba import NumbaOptimizer
+from histoptimizer.numba_optimizer import NumbaOptimizer
 
 
 @pytest.fixture
@@ -78,3 +78,10 @@ def test_echo_tables(pivot_benchmark, partitioner_list, capsys):
 def test_get_system_info():
     result = benchmark.get_system_info()
     assert result
+
+
+def test_get_partitioners():
+    result = {p.name for p in
+              benchmark.get_partitioners(
+                  'numba,custom_module_fixture.py:SampleOptimizer')}
+    assert result == {'numba', 'sample'}

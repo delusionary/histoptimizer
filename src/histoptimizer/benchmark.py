@@ -23,6 +23,8 @@ import re
 import sys
 import time
 from math import ceil, log10
+import importlib.machinery
+import importlib.util
 
 import click
 import numpy as np
@@ -35,7 +37,7 @@ from histoptimizer.historical.cuda_2 import CUDAOptimizerItemPairs
 from histoptimizer.historical.enumerate import EnumeratingOptimizer
 from histoptimizer.historical.recursive import RecursiveOptimizer
 from histoptimizer.historical.recursive_cache import RecursiveCacheOptimizer
-from histoptimizer.numba import NumbaOptimizer
+from histoptimizer.numba_optimizer import NumbaOptimizer
 
 partitioners = {c.name: c for c in (
     Histoptimizer,
@@ -257,10 +259,22 @@ def write_report(r: pd.DataFrame, report: str):
 def cli(partitioner_types, item_spec, bucket_spec, iterations, size_spec,
         debug_info, force_jit, report, sizes_from, tables, verbose):
     """
-    Histobench is a benchmarking harness for testing Histoptimizer partitioner performance.
+    Histobench is a benchmarking harness for testing Histoptimizer partitioner
+    performance.
 
-    By Default it uses random data, and so may not be an accurate benchmark for algorithms whose performance
-    depends upon the data set.
+    By Default it uses random data, and so may not be an accurate benchmark for
+    algorithms whose performance depends upon the data set.
+
+    The PARTITIONER_TYPES parameter is a comma-separated list of partitioners
+    to benchmark, which can be specified as either:
+
+    1. A standard optimizer name, or
+    2. filepath:classname
+
+    To specify the standard cuda module and also a custom variant, for example,
+    one could use: cuda,./old_optimizers/cuda_20221130.py:CUDAOptimizer20221130
+
+
 
     Args:
 
@@ -269,15 +283,14 @@ def cli(partitioner_types, item_spec, bucket_spec, iterations, size_spec,
     Raises:
 
     """
-    # cuda.select_device(0)
-    # cuda.profile_start()
-    # Parse arguments
-    partitioner_list = [partitioners[k] for k in partitioner_types.split(',')]
 
+    partitioner_list = get_partitioners(partitioner_types)
     specified_items_sizes = get_sizes_from(sizes_from)
+
     item_variable_dict = {}
     if specified_items_sizes is not None:
         item_variable_dict['n'] = len(specified_items_sizes)
+
     bucket_list = parse_set_spec(bucket_spec)
     item_list = parse_set_spec(item_spec, item_variable_dict)
     if match := re.match(r'(\d+)-(\d+)$', size_spec):
@@ -302,6 +315,23 @@ def cli(partitioner_types, item_spec, bucket_spec, iterations, size_spec,
 
     if report is not None:
         write_report(r, report)
+
+
+def get_partitioners(partitioner_types):
+    """Return a list of partitioners for the given types string.
+    """
+    partitioner_list = []
+    for p in partitioner_types.split(','):
+        if m := re.match(r'(?P<filename>.*):(?P<classname>.*)', p):
+            loader = importlib.machinery.SourceFileLoader('mymodule',
+                                                          m.group('filename'))
+            spec = importlib.util.spec_from_loader('mymodule', loader)
+            mymodule = importlib.util.module_from_spec(spec)
+            loader.exec_module(mymodule)
+            partitioner_list.append(getattr(mymodule, (m.group('classname'))))
+        else:
+            partitioner_list.append(partitioners[p])
+    return partitioner_list
 
 
 if __name__ == '__main__':
