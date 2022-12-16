@@ -47,12 +47,6 @@ partitioners = {c.name: c for c in (
     RecursiveCacheOptimizer,
 )}
 
-#  os.environ['NSIGHT_CUDA_DEBUGGER'] = '1'
-
-import os
-
-os.environ['NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS'] = '0'
-
 
 def get_system_info() -> dict:
     """

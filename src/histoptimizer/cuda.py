@@ -25,8 +25,8 @@ from numba.core import config
 
 from histoptimizer import Histoptimizer
 
-threads_per_pair = 8
-item_pairs_per_block = 8
+threads_per_pair = 256
+item_pairs_per_block = 4
 threads_per_block = threads_per_pair * item_pairs_per_block
 
 
@@ -73,7 +73,7 @@ def cuda_reconstruct(divider_location, min_cost, num_items, num_buckets,
 
 @cuda.jit
 def _cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items,
-                           bucket, mean):  # pragma: no cover
+                           bucket, mean, shared_mem_export):  # pragma: no cover
     """
     Main CUDA kernel.
 
@@ -115,14 +115,6 @@ def _cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items,
             the divider location that gives lowest cost.
     """
 
-    shared_cost = cuda.shared.array(
-        shape=(2, item_pairs_per_block, threads_per_pair),
-        dtype=np.float32
-    )
-    shared_divider = cuda.shared.array(
-        shape=(2, item_pairs_per_block, threads_per_pair),
-        dtype=np.int32
-    )
     # Offset of thread within the block.
     thread_idx = cuda.threadIdx.x
     # Offset of the block within the grid.
@@ -133,105 +125,115 @@ def _cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items,
     # item pair, followed by all the threads for the second item pair.
     # Item pairs are allocated in order throughout the blocks of the grid.
     # So to get the index of the first item, get the absolute index of the
-    # thread and then integer divide by the number of item pairs per block.
-    first_item = (thread_idx + (block_idx * block_size)) // item_pairs_per_block
-    # Offset within block that contains the first thread for this item pair.
-    pair_offset = thread_idx // threads_per_pair
+    # thread and then integer divide by the number of threads per item pair
+    item1 = (thread_idx + (block_idx * block_size)) // threads_per_pair
+    item2 = num_items[0] - item1
+
     # Offset within the item pair of this thread.
     thread_offset = thread_idx % threads_per_pair
 
+    shared_cost = cuda.shared.array(
+        shape=(2, 32),
+        dtype=np.float32
+    )
+    shared_divider = cuda.shared.array(
+        shape=(2, 32),
+        dtype=np.int32
+    )
+
     # The last block will have threads with values greater than half, those
     # threads are done.
-    if first_item > num_items[0] / 2:
+    # if item1 > num_items[0] / 2:
+    #    return
+
+    # Find Item 1 thread local minimum.
+    min_cost1 = np.inf
+    divider1 = 0
+    if item1 >= bucket[0] and (item1 <= (num_items[0] // 2)):
+        for previous_item in range(bucket[0] - 1 + thread_offset,
+                                   item1, threads_per_pair):
+            cost = (
+                    min_cost[previous_item, bucket[0] - 1] +
+                    ((prefix_sum[item1] - prefix_sum[
+                        previous_item]) -
+                     mean[0]) ** 2
+            )
+            if min_cost1 > cost:
+                min_cost1 = cost
+                divider1 = previous_item
+
+    shared_mem_export[item1, bucket[0], thread_offset] = min_cost1
+
+    # Find Item 2 thread local minimum
+    min_cost2 = np.inf
+    divider2 = 0
+    if (item1 < item2):
+        for previous_item in range(bucket[0] - 1 + thread_offset,
+                                   item2, threads_per_pair):
+            cost = min_cost[previous_item, bucket[0] - 1] + \
+                   ((prefix_sum[item2] - prefix_sum[previous_item])
+                    - mean[0]) ** 2
+            if min_cost2 > cost:
+                min_cost2 = cost
+                divider2 = previous_item
+
+    # shared_mem_export[item2, bucket[0], thread_offset] = min_cost2
+
+    cuda.syncthreads()
+
+    delta = np.int32(cuda.warpsize // 2)
+    while delta > 0:
+        min_cost_next = cuda.shfl_down_sync(0xffffffff, min_cost1, delta)
+        divider_next = cuda.shfl_down_sync(0xffffffff, divider1, delta)
+        if min_cost1 > min_cost_next:
+            min_cost1 = min_cost_next
+            divider1 = divider_next
+        delta //= 2
+
+    if cuda.laneid == 0:
+        shared_cost[0, thread_idx // cuda.warpsize] = min_cost1
+        shared_divider[0, thread_idx // cuda.warpsize] = divider1
+
+    cuda.syncthreads()
+
+    delta = np.int32(cuda.warpsize // 2)
+    while delta > 0:
+        min_cost_next = cuda.shfl_down_sync(0xffffffff, min_cost2, delta)
+        divider_next = cuda.shfl_down_sync(0xffffffff, divider2, delta)
+        if min_cost2 > min_cost_next:
+            min_cost2 = min_cost_next
+            divider2 = divider_next
+        delta //= 2
+
+    if cuda.laneid == 0:
+        shared_cost[1, thread_idx // cuda.warpsize] = min_cost2
+        shared_divider[1, thread_idx // cuda.warpsize] = divider2
+
+    cuda.syncthreads()
+
+    # Linear search for the lowest cost. Should be a reduction like above.
+    if thread_offset > 0:
         return
 
-    if first_item > 1:
-        divider = 0
-        tmp = np.inf
-        if first_item >= bucket[0]:
-            for previous_item in range(bucket[0] - 1 + thread_offset,
-                                       first_item, threads_per_pair):
-                cost = (
-                        min_cost[previous_item, bucket[0] - 1] +
-                        ((prefix_sum[first_item] - prefix_sum[previous_item]) -
-                         mean[0]) ** 2
-                )
-                if tmp > cost:
-                    tmp = cost
-                    divider = previous_item
+    base = thread_idx // cuda.warpsize
+    min_cost1 = shared_cost[0, base]
+    min_cost2 = shared_cost[1, base]
+    divider1 = shared_divider[0, base]
+    divider2 = shared_divider[1, base]
+    for x in range(1, threads_per_pair // cuda.warpsize):
+        if min_cost1 > shared_cost[0, base + x]:
+            min_cost1 = shared_cost[0, base + x]
+            divider1 = shared_divider[0, base + x]
+        if min_cost2 > shared_cost[1, base + x]:
+            min_cost2 = shared_cost[1, base + x]
+            divider2 = shared_divider[1, base + x]
 
-        shared_cost[0, pair_offset, thread_offset] = tmp
-        shared_divider[0, pair_offset, thread_offset] = divider
-
-    second_item = num_items[0] - first_item
-
-    if second_item != first_item:
-        divider = 0
-        tmp = np.inf
-        if second_item >= bucket[0]:
-            for previous_item in range(bucket[0] - 1 + thread_offset,
-                                       second_item, threads_per_pair):
-                cost = min_cost[previous_item, bucket[0] - 1] + \
-                       ((prefix_sum[second_item] - prefix_sum[previous_item])
-                        - mean[0]) ** 2
-                if tmp > cost:
-                    tmp = cost
-                    divider = previous_item
-
-        shared_cost[1, pair_offset, thread_offset] = tmp
-        shared_divider[
-            1, pair_offset, thread_offset] = divider
-
-    cuda.syncthreads()
-
-    # Reduce the values from each thread in the shared memory segments to find the lowest overall value.
-
-    s = 1
-    while s < threads_per_pair:
-        if (thread_offset % (2 * s) == 0) and (
-                thread_offset + s < first_item):
-            if shared_cost[0, pair_offset, thread_offset] > \
-                    shared_cost[
-                        0, pair_offset, thread_offset + s]:
-                shared_cost[0, pair_offset, thread_offset] = \
-                    shared_cost[
-                        0, pair_offset, thread_offset + s]
-                shared_divider[
-                    0, pair_offset, thread_offset] = \
-                    shared_divider[
-                        0, pair_offset, thread_offset + s]
-        cuda.syncthreads()
-        s = s * 2
-
-    if thread_offset == 0 and first_item > 1:
-        min_cost[first_item, bucket[0]] = shared_cost[
-            0, pair_offset, thread_offset]
-        divider_location[first_item, bucket[0]] = shared_divider[
-            0, pair_offset, thread_offset]
-
-    cuda.syncthreads()
-
-    s = 1
-    while s < threads_per_pair:
-        if thread_offset % (2 * s) == 0:
-            if shared_cost[1, pair_offset, thread_offset] > \
-                    shared_cost[
-                        1, pair_offset, thread_offset + s]:
-                shared_cost[1, pair_offset, thread_offset] = \
-                    shared_cost[
-                        1, pair_offset, thread_offset + s]
-                shared_divider[
-                    1, pair_offset, thread_offset] = \
-                    shared_divider[
-                        1, pair_offset, thread_offset + s]
-        cuda.syncthreads()
-        s = s * 2
-
-    if thread_offset == 0 and second_item != first_item:
-        min_cost[second_item, bucket[0]] = shared_cost[
-            1, pair_offset, thread_offset]
-        divider_location[second_item, bucket[0]] = shared_divider[
-            1, pair_offset, thread_offset]
+    if item1 > 1:
+        min_cost[item1, bucket[0]] = min_cost1
+        divider_location[item1, bucket[0]] = divider1
+    if item2 > item1:
+        min_cost[item2, bucket[0]] = min_cost2
+        divider_location[item2, bucket[0]] = divider2
 
 
 class CUDAOptimizer(Histoptimizer):
@@ -253,9 +255,12 @@ class CUDAOptimizer(Histoptimizer):
     def cuda_reconstruct_partition(cls, items, num_buckets, min_cost_gpu,
                                    divider_location_gpu):
         min_variance_gpu = cuda.device_array((1,), dtype=np.float32)
-        num_items_gpu = cuda.to_device(np.array([len(items) - 1], dtype=int))
-        num_buckets_gpu = cuda.to_device(np.array([num_buckets], dtype=int))
-        partition_gpu = cuda.device_array(num_buckets - 1, dtype=int)
+        num_items_gpu = \
+            cuda.to_device(np.array([len(items) - 1], dtype=np.int32))
+        num_buckets_gpu = \
+            cuda.to_device(np.array([num_buckets], dtype=np.int32))
+        partition_gpu = cuda.device_array(num_buckets - 1, dtype=np.int32)
+
         cuda_reconstruct[1, 1](divider_location_gpu, min_cost_gpu,
                                num_items_gpu, num_buckets_gpu, partition_gpu,
                                min_variance_gpu)
@@ -302,14 +307,18 @@ class CUDAOptimizer(Histoptimizer):
             item_cost[item] = (prefix_sum[item] - mean_bucket_sum) ** 2
 
         # Transfer input values to the GPU, and create on-GPU arrays for results.
+
         prefix_sum_gpu = cuda.to_device(prefix_sum)
         mean_value_gpu = cuda.to_device(
             np.array([mean_bucket_sum], dtype=np.float32))
         num_items_gpu = cuda.to_device(np.array([len(items) - 1]))
         item_cost_gpu = cuda.to_device(item_cost)
-        min_cost_gpu = cuda.device_array((len(items), num_buckets + 1))
+        min_cost_gpu = cuda.device_array((len(items), num_buckets + 1),
+                                         dtype=np.float32)
+        shared_mem = cuda.device_array(
+            (len(items), num_buckets + 1, threads_per_pair), dtype=np.float32)
         divider_location_gpu = cuda.device_array((len(items), num_buckets + 1),
-                                                 dtype=int)
+                                                 dtype=np.int32)
 
         # Initialize row 1 and column 1 of the min_cost matrix. These could be handled
         # Using logic in the main kernel, but it does not appear to improve performance.
@@ -332,7 +341,8 @@ class CUDAOptimizer(Histoptimizer):
                                                                   prefix_sum_gpu,
                                                                   num_items_gpu,
                                                                   bucket_gpu,
-                                                                  mean_value_gpu)
+                                                                  mean_value_gpu,
+                                                                  shared_mem)
 
         # Calculate the list of dividers from the min_cost and divider_location matrices
         min_variance, dividers = cls.cuda_reconstruct_partition(items,
@@ -341,6 +351,8 @@ class CUDAOptimizer(Histoptimizer):
                                                                 divider_location_gpu)
         cls.add_debug_info(debug_info, divider_location_gpu, items,
                            min_cost_gpu, prefix_sum)
+        if debug_info:
+            debug_info['shared_mem'] = shared_mem.copy_to_host()
 
         config.CUDA_LOW_OCCUPANCY_WARNINGS = warnings_enabled
 

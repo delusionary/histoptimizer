@@ -9,24 +9,29 @@ class EnumeratingOptimizer(Histoptimizer):
     @classmethod
     def partition_generator(cls, num_items: int, num_buckets: int) -> list:
         """
-        Given a number of items `num_items` and a number of buckets `num_buckets`, enumerate lists of all the possible
-        combinations of divider locations that partition `num_items` into `num_buckets`.
+        Given a number of items `num_items` and a number of buckets
+        `num_buckets`, enumerate lists of all the possible combinations of
+        divider locations that partition `num_items` into `num_buckets`.
 
-        The strategy is to start at the enumeration that has each divider in its left-most possible location, and then
-        iterate all possible locations of the last (right-most) divider before incrementing the next-to-last and again
-        iterating all possible locations of the last divider.
+        The strategy is to start at the enumeration that has each divider in its
+        left-most possible location, and then iterate all possible locations of
+        the last (right-most) divider before incrementing the next-to-last and
+        again iterating all possible locations of the last divider.
 
-        When there are no more valid locations for the next-to-last divider, then the previous divider is incremented and
-        the process repeated, and so on until the first divider and all subsequent dividers are in their largest
-        (right-most) possible locations.
+        When there are no more valid locations for the next-to-last divider,
+        then the previous divider is incremented and the process repeated, and
+        so on until the first divider and all subsequent dividers are in their
+        largest (right-most) possible locations.
         """
         num_dividers = num_buckets - 1
         last_divider = num_dividers - 1
 
+        # Start with the first valid partition.
         partition = [x for x in range(1,
-                                      num_dividers + 1)]  # Start with the first valid partition.
+                                      num_dividers + 1)]
+        # We know what the last partition is.
         last_partition = [x for x in range(num_items - num_dividers,
-                                           num_items)]  # We know what the last partition is.
+                                           num_items)]
         current_divider = last_divider
 
         # Deal with single-divider/two-bucket case
@@ -59,15 +64,6 @@ class EnumeratingOptimizer(Histoptimizer):
                     for divider in range(current_divider, num_dividers):
                         partition[divider] = 0
                     current_divider -= 1
-            # if this is the last divider, then loop through all possible values yielding each
-            #         then decrease the current divider location and set an increment flag
-            # if not last divider:
-            #   check the current location of the current divider
-            #     if it is zero, set to the minimum valid value (previous divider location + 1)
-            #     elif it is less than the max location value, increment it and move to the next divider location
-            #     elif it is at the max location value, then set it and all subsequent location values to 0
-            #       and move to previous divider.
-        # End loop when all dividers are set at their last possible locations.
 
     @classmethod
     def partition(cls, items, num_buckets, debug_info=None, mean=None):
