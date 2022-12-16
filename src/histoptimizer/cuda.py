@@ -73,7 +73,7 @@ def cuda_reconstruct(divider_location, min_cost, num_items, num_buckets,
 
 @cuda.jit
 def _cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items,
-                           bucket, mean, shared_mem_export):  # pragma: no cover
+                           bucket, mean):  # pragma: no cover
     """
     Main CUDA kernel.
 
@@ -162,12 +162,10 @@ def _cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items,
                 min_cost1 = cost
                 divider1 = previous_item
 
-    shared_mem_export[item1, bucket[0], thread_offset] = min_cost1
-
     # Find Item 2 thread local minimum
     min_cost2 = np.inf
     divider2 = 0
-    if (item1 < item2):
+    if item1 < item2:
         for previous_item in range(bucket[0] - 1 + thread_offset,
                                    item2, threads_per_pair):
             cost = min_cost[previous_item, bucket[0] - 1] + \
@@ -176,8 +174,6 @@ def _cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items,
             if min_cost2 > cost:
                 min_cost2 = cost
                 divider2 = previous_item
-
-    # shared_mem_export[item2, bucket[0], thread_offset] = min_cost2
 
     cuda.syncthreads()
 
@@ -315,8 +311,6 @@ class CUDAOptimizer(Histoptimizer):
         item_cost_gpu = cuda.to_device(item_cost)
         min_cost_gpu = cuda.device_array((len(items), num_buckets + 1),
                                          dtype=np.float32)
-        shared_mem = cuda.device_array(
-            (len(items), num_buckets + 1, threads_per_pair), dtype=np.float32)
         divider_location_gpu = cuda.device_array((len(items), num_buckets + 1),
                                                  dtype=np.int32)
 
@@ -341,18 +335,17 @@ class CUDAOptimizer(Histoptimizer):
                                                                   prefix_sum_gpu,
                                                                   num_items_gpu,
                                                                   bucket_gpu,
-                                                                  mean_value_gpu,
-                                                                  shared_mem)
+                                                                  mean_value_gpu
+                                                                  )
 
-        # Calculate the list of dividers from the min_cost and divider_location matrices
+        # Calculate the list of dividers from the min_cost and
+        # divider_location matrices
         min_variance, dividers = cls.cuda_reconstruct_partition(items,
                                                                 num_buckets,
                                                                 min_cost_gpu,
                                                                 divider_location_gpu)
         cls.add_debug_info(debug_info, divider_location_gpu, items,
                            min_cost_gpu, prefix_sum)
-        if debug_info:
-            debug_info['shared_mem'] = shared_mem.copy_to_host()
 
         config.CUDA_LOW_OCCUPANCY_WARNINGS = warnings_enabled
 

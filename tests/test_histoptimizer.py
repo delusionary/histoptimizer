@@ -132,9 +132,7 @@ def test_matrix_correctness(min_cost_divider_tests, partitioner, artifact):
             ref_infinities = np.isinf(ref_min_cost)
             same_infinities = np.all(np.equal(infinities, ref_infinities))
 
-            if not same_infinities:
-                pass
-            # assert same_infinities
+            assert same_infinities
 
             min_cost_match = np.all(
                 np.logical_or(
@@ -142,11 +140,8 @@ def test_matrix_correctness(min_cost_divider_tests, partitioner, artifact):
                     infinities,
                 )
             )
-            if not min_cost_match:
-                x = 1
-                pass
 
-            # assert min_cost_match
+            assert min_cost_match
 
 
 @pytest.fixture
