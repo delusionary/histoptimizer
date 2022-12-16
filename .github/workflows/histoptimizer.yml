@@ -5,7 +5,10 @@ on: [push]
 # but improves test coverage.
 env:
   NUMBA_DISABLE_JIT: 1
-  NUMBA_ENABLE_CUDASIM: 1
+
+# Disabling cudasim for now because it does not support the shfl_down_sync
+# intrinsic needed for the cuda optimizer to run.
+#  NUMBA_ENABLE_CUDASIM: 1
 
 jobs:
   build:
