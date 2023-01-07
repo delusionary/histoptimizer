@@ -230,7 +230,7 @@ class Histoptimizer(object):
 
         partition = cls.reconstruct_partition(divider_locs, num_items,
                                               num_buckets)
-        return partition, min_cost[num_items, num_buckets] / num_buckets
+        return [partition, min_cost[num_items, num_buckets] / num_buckets]
 
 
 def get_partition_sums(dividers, item_sizes):
@@ -308,8 +308,7 @@ def get_partition_series(sizes: pd.Series, num_buckets: int, partitioner):
     standard deviation.
 
     Args:
-        data (DataFrame): The first parameter.
-        sizes (str): Column to get size values from.
+        sizes (pandas.Series): Series of object sizes.
         num_buckets (int): Number of buckets to partition items into.
         partitioner (function): Partitioner function
 
@@ -346,7 +345,7 @@ def histoptimize(data: pd.DataFrame, sizes: str, bucket_list: list,
         DataFrame: Original DataFrame with one or more columns added.
         list(str): List of column names added to the original DataFrame
     """
-    partitions = pd.DataFrame(columns=('column_name', 'dividers', 'variance'))
+    partitions = pd.DataFrame(columns=['column_name', 'dividers', 'variance'])
     items = data[[sizes]].astype('float32').to_numpy(dtype=np.float32)
     for buckets in bucket_list:
         dividers, variance = partitioner.partition(items, buckets)

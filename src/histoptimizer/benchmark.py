@@ -63,9 +63,10 @@ def get_system_info() -> dict:
 
 def partitioner_pivot(df: pd.DataFrame, partitioner) -> pd.DataFrame:
     """
-    Given a DataFrame of results produced by histobench, and the name of a partitioner,
-    isolate results of that partitioner and create a pivot table on bucket, so that
-    the frame becomes a grid with # items in rows and # buckets in columns.
+    Given a DataFrame of results produced by histobench, and the name of a
+    partitioner, isolate results of that partitioner and create a pivot table
+    on bucket, so that the frame becomes a grid with # items in rows and
+    # buckets in columns.
 
     Args:
         df (DataFrame): Results DataFrame.
@@ -120,8 +121,9 @@ def benchmark(partitioner_list: list, item_list: list, bucket_list: list,
     Raises:
     """
     r = pd.DataFrame(
-        columns=('partitioner', 'num_items', 'buckets', 'iteration',
-                 'variance', 'elapsed_seconds', 'dividers', 'items'))
+        columns=['partitioner', 'num_items', 'buckets', 'iteration',
+                 'variance', 'elapsed_seconds', 'dividers', 'items'])
+    dividers = None
 
     for num_items in item_list:
         for num_buckets in bucket_list:
