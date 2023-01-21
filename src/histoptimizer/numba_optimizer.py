@@ -25,7 +25,10 @@ from histoptimizer import Histoptimizer
     nopython=True,
     target='cpu'
 )
-def _get_min_cost(bucket, prefix_sum, previous_row, mean,
+def _get_min_cost(bucket: np.array,
+                  prefix_sum: np.array,
+                  previous_row: np.array,
+                  mean: np.array,
                   current_row_cost, current_row_dividers):  # pragma: no cover
     current_row_cost[0] = previous_row[0]
     current_row_cost[1] = previous_row[1]
@@ -35,9 +38,8 @@ def _get_min_cost(bucket, prefix_sum, previous_row, mean,
         min_cost = np.inf
         divider_location = 0
         for previous_item in range(bucket - 1, item):
-            cost = previous_row[previous_item] + ((prefix_sum[item] -
-                                                   prefix_sum[
-                                                       previous_item]) - mean) ** 2
+            cost = previous_row[previous_item] + (
+                    (prefix_sum[item] - prefix_sum[previous_item]) - mean) ** 2
             if cost < min_cost:
                 min_cost = cost
                 divider_location = previous_item

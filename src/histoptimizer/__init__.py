@@ -56,7 +56,8 @@ class Histoptimizer(object):
             raise ValueError("debug_info should be None or a dictionary")
 
     @classmethod
-    def reconstruct_partition(cls, divider_location, num_items, num_buckets):
+    def reconstruct_partition(cls, divider_location, num_items, num_buckets) \
+            -> np.array:
         """Return a list of optimal divider locations given a location matrix.
 
         Arguments:
@@ -77,7 +78,7 @@ class Histoptimizer(object):
         return partitions
 
     @classmethod
-    def get_prefix_sums(cls, item_sizes):
+    def get_prefix_sums(cls, item_sizes: list[np.float32]) -> np.array:
         """
         Given a list of item sizes, return a NumPy float32 array where item 0 is
         0 and item *n* is the cumulative sum of item sizes 0..n-1.
@@ -97,7 +98,8 @@ class Histoptimizer(object):
         return prefix_sum
 
     @classmethod
-    def init_matrices(cls, num_buckets, prefix_sum):
+    def init_matrices(cls, num_buckets: int, prefix_sum: list[np.float32]) \
+            -> (np.array, np.array):
         """Create and initialize min_cost and divider_location matrices.
 
         Creates the two matrices necessary to implement Skiena's algorithm, and
@@ -124,8 +126,9 @@ class Histoptimizer(object):
         return min_cost, divider_location
 
     @classmethod
-    def build_matrices(cls, min_cost, divider_location,
-                       num_buckets, prefix_sum):
+    def build_matrices(cls, min_cost: np.array, divider_location: np.array,
+                       num_buckets: int, prefix_sum: list[np.float32]) \
+            -> (np.array, np.array):
         """Compute min cost and divider location matrices.
 
         These matrices encode a full set of intermediate results that
@@ -134,6 +137,11 @@ class Histoptimizer(object):
         size of each partition is minimized.
 
         Arguments:
+            min_cost: Array to hold minimum achievable variance values
+                (see Returns section). The first row and column should be
+                initialized.
+            divider_location: Array to hold divider locations (see Returns
+                section).
             num_buckets: Number of buckets to distribute the items into.
             prefix_sum: List of sums such that prefix_sum[n] = sum(1..n)
                 of item sizes. This representation is more efficient than
@@ -141,6 +149,9 @@ class Histoptimizer(object):
                 needed.
 
         Returns:
+
+            Returns a tuple of references to the input arrays, which are
+                modified in place.
             min_cost: Matrix giving, For a given [item, divider] combination,
                 the minimum achievable variance for placing [divider-1] dividers
                 between elements 1..item.
@@ -149,7 +160,6 @@ class Histoptimizer(object):
                 lowest cost in min_cost.
 
         """
-        n = len(prefix_sum)
         mean = prefix_sum[-1] / num_buckets
 
         for bucket in range(2, num_buckets + 1):
@@ -188,7 +198,7 @@ class Histoptimizer(object):
     # noinspection DuplicatedCode
     @classmethod
     def partition(cls, item_sizes, num_buckets: int, debug_info: dict = None
-                  ) -> list:
+                  ) -> (list[int], np.float32):
         """Given a list of item sizes, partition the items into buckets evenly.
 
         This function returns a set of partition indexes, or divider locations,
@@ -233,7 +243,7 @@ class Histoptimizer(object):
         return [partition, min_cost[num_items, num_buckets] / num_buckets]
 
 
-def get_partition_sums(dividers, item_sizes):
+def get_partition_sums(dividers, item_sizes) -> list[np.float32]:
     """Get a list of the total sizes of each partition.
 
     Given a list of divider locations and a list of items, return a list the sum
@@ -263,7 +273,7 @@ def get_partition_sums(dividers, item_sizes):
     return partitions
 
 
-def bucket_generator(dividers: np.array, num_items: int):
+def bucket_generator(dividers: np.array, num_items: int) -> int:
     """Convert divider locations into a series of bucket numbers for items.
 
     Given a list of divider locations and a total number of items, yield a list
@@ -301,7 +311,8 @@ def bucket_generator(dividers: np.array, num_items: int):
             yield bucket
 
 
-def get_partition_series(sizes: pd.Series, num_buckets: int, partitioner):
+def get_partition_series(sizes: pd.Series, num_buckets: int, partitioner) \
+        -> pd.Series:
     """
     Takes a Pandas DataFrame and returns a Series that distributes rows
     sequentially into the given number of buckets with the minimum possible
@@ -322,7 +333,8 @@ def get_partition_series(sizes: pd.Series, num_buckets: int, partitioner):
 
 def histoptimize(data: pd.DataFrame, sizes: str, bucket_list: list,
                  column_name: str,
-                 partitioner, optimal_only=False):
+                 partitioner: object, optimal_only=False) \
+        -> (pd.DataFrame, list[str]):
     """
     Histoptimize takes a Pandas DataFrame and adds additional columns, one for
     each integer in bucket_list.
@@ -336,10 +348,11 @@ def histoptimize(data: pd.DataFrame, sizes: str, bucket_list: list,
         data (DataFrame): The DataFrame to add columns to.
         sizes (str): Column to get size values from.
         bucket_list (list): A list of integer bucket sizes.
-        column_name (str): Prefix to be added to the number of buckets to get the column name.
+        column_name (str): Prefix to be added to the number of buckets to get
+            the column name.
         partitioner (class): Class that implements the Histoptimizer API.
-        optimal_only (bool): If true, add only one column, for the number of buckets with the
-            lowest variance.
+        optimal_only (bool): If true, add only one column, for the number of
+            buckets with the lowest variance.
 
     Returns:
         DataFrame: Original DataFrame with one or more columns added.

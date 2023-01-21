@@ -89,8 +89,7 @@ def benchmark(partitioner_list: list, item_list: list, bucket_list: list,
               begin_range: int = 1, end_range: int = 10,
               specified_items_sizes: list = None, verbose: bool = False) \
         -> pd.DataFrame:
-    """
-    Benchmark runs a given list of partitioners against the same data, and records the results and timing.
+    """Benchmark a given list of partitioners against the same data.
 
     The caller can specify that the partitioners be
 
@@ -98,14 +97,19 @@ def benchmark(partitioner_list: list, item_list: list, bucket_list: list,
         partitioner_list: List of partitioner functions to benchmark.
         item_list: A list of item counts to benchmark.
         bucket_list: A list bucket counts to benchmark.
-        iterations: Number of iterations to test each item_list x bucket_list combination.
-        begin_range: For random item generation, the lower bound of the random size values.
-        end_range: For random item generation, the upper bound of the random size values.
-        specified_items_sizes: An ordered list of item sizes. Must be as long as the max value of item_list.
+        iterations: Number of iterations to test each item_list x bucket_list
+            combination.
+        begin_range: For random item generation, the lower bound of the random
+            size values.
+        end_range: For random item generation, the upper bound of the random
+            size values.
+        specified_items_sizes: An ordered list of item sizes. Must be as long as
+            the max value of item_list.
         verbose: If true, log debugging information.
 
     Returns:
-        pandas.DataFrame: DataFrame containing one row for each partitioner x item size x bucket size x iteration.
+        pandas.DataFrame: DataFrame containing one row for each
+            partitioner x item size x bucket size x iteration.
 
         Each row contains the following columns:
 
@@ -155,11 +159,14 @@ def benchmark(partitioner_list: list, item_list: list, bucket_list: list,
                 numeric_only=True)
             if verbose:
                 click.echo(
-                    f'Items: {num_items} Buckets: {num_buckets} Mean values over {iterations} iterations:')
+                    f'Items: {num_items} Buckets: {num_buckets}'
+                    f' Mean values over {iterations} iterations:')
                 click.echo(f'Partitioner\t\tTime (ms)\t\tVariance\t\tDividers')
                 for partitioner, record in mean.iterrows():
                     click.echo(
-                        f'{partitioner}\t\t\t{record.elapsed_seconds * 1000:.2f}\t\t\t{record.variance:.4f}\t\t{list(dividers)}')
+                        f'{partitioner}\t\t\t'
+                        f'{record.elapsed_seconds * 1000:.2f}'
+                        f'\t\\t\t{record.variance:.4f}\t\t{list(dividers)}')
     return r
 
 
@@ -170,16 +177,13 @@ def echo_tables(partitioner_list: list, r: pd.DataFrame):
     Args:
         partitioner_list: List of partitioners to generate output for.
         r: A DataFrame of results produced by the benchmark function.
-    Returns:
-
-    Raises:
     """
     for partitioner in (p.name for p in partitioner_list):
         grid = partitioner_pivot(r, partitioner)
         items_width = ceil(max(log10(grid.index.max()),
-                               1)) + 2  # wide enough for the widest num_items value.
+                               1)) + 2  # wide enough for the widest value.
         width = ceil(max(log10(grid.max().max()),
-                         1)) + 6  # Max decimal digits we have + ".000" + 2 spaces
+                         1)) + 6  # Max digits we have + ".000" + 2 spaces
         click.echo(
             f'Partitioner: {partitioner}\n{"".rjust(items_width)}' + ''.join(
                 [str(x).rjust(width) for x in grid.columns]))
@@ -195,13 +199,15 @@ def get_sizes_from(file_path: str) -> np.ndarray:
     Read sizes from the given file path.
 
     Args:
-        file_path: Path to a CSV file with one column, or a JSON file where each object has one attribute. The values
-            in the field must be castable to floats.
+        file_path: Path to a CSV file with one column, or a JSON file where each
+            object has one attribute. The values in the field must cast
+            to float.
 
     Returns:
         A list of item sizes in the same order as read from the file.
     Raises:
-        ValueError if the file does not contain CSV with a single column or a JSON dataframe with a single attribute.
+        ValueError if the file does not contain CSV with a single column or a
+            JSON dataframe with a single attribute.
     """
     specified_items_sizes = None
     if file_path is not None:
@@ -213,22 +219,25 @@ def get_sizes_from(file_path: str) -> np.ndarray:
             specified_items = pd.read_csv(file_path)
         if len(specified_items.columns) != 1:
             raise ValueError(
-                f'Files specified with --sizes-from must contain a CSV or JSON DataFrame with one (1)'
-                f'column. Found {len(specified_items)} columns instead.')
+                f'Files specified with --sizes-from must contain a CSV or JSON'
+                f'DataFrame with one (1) column. Found {len(specified_items)}'
+                f'columns instead.')
         try:
             specified_items_sizes = np.array(
                 specified_items[specified_items.columns[0]], dtype=np.float32)
         except ValueError as e:
             raise ValueError(
-                f'Files specified with --sizes-from must contain a single column of Float32-coercible'
-                f'values: {str(e)}')
+                f'Files specified with --sizes-from must contain a single'
+                f'column of Float32-coercible values: {str(e)}')
     return specified_items_sizes
 
 
 def write_report(r: pd.DataFrame, report: str):
-    """
-    Write the given results DataFrame to the given file. If the filename ends in '.json', JSON is generated, otherwise
-    CSV. The special value '-' can be used to write the results to stdout.
+    """Write the given results DataFrame to the given file.
+
+    If the filename ends in '.json', JSON is generated, otherwise CSV. The
+    special value '-' can be used to write the results to stdout.
+
     Args:
         r: Results DataFrame
         report: Path to report file.
