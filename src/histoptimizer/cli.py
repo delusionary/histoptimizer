@@ -133,7 +133,7 @@ def cli(file, id_column, size_column, partitions, limit, ascending,
 
     Example:
 
-        > histoptimizer states.csv state_name population 10
+        > histoptimizer books.csv state_name population 10
 
         Output:
 

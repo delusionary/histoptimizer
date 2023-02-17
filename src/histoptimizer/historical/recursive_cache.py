@@ -53,19 +53,17 @@ class RecursiveCacheOptimizer(Histoptimizer):
 
         for current_divider_location in range(first_possible_position,
                                               last_item + 1):
-            for previous_divider_location in range(j - 1,
-                                                   current_divider_location):
-                (lh_cost, previous_dividers) = cls.min_cost_partition(items,
-                                                                      k - 1,
-                                                                      last_item=current_divider_location - 1,
-                                                                      mean=mean,
-                                                                      cache=cache)
-                rh_cost = (sum(items[
-                               current_divider_location:last_item + 1]) - mean) ** 2
-                cost = lh_cost + rh_cost
-                if cost < best_cost:
-                    best_cost = cost
-                    dividers = previous_dividers + [current_divider_location]
+            (lh_cost, previous_dividers) = cls.min_cost_partition(items,
+                                                                  k - 1,
+                                                                  last_item=current_divider_location - 1,
+                                                                  mean=mean,
+                                                                  cache=cache)
+            rh_cost = (sum(items[
+                           current_divider_location:last_item + 1]) - mean) ** 2
+            cost = lh_cost + rh_cost
+            if cost < best_cost:
+                best_cost = cost
+                dividers = previous_dividers + [current_divider_location]
 
         cache[k][last_item] = (best_cost, dividers)
         return best_cost, dividers

@@ -362,11 +362,17 @@ def histoptimize(data: pd.DataFrame, sizes: str, bucket_list: list,
     items = data[[sizes]].astype('float32').to_numpy(dtype=np.float32)
     for buckets in bucket_list:
         dividers, variance = partitioner.partition(items, buckets)
-        partitions = partitions.append({
+        # partitions = partitions.append({
+        #     'column_name': f'{column_name}{buckets}',
+        #     'dividers': dividers,
+        #     'variance': variance},
+        #     ignore_index=True)
+        new_rows = pd.DataFrame({
             'column_name': f'{column_name}{buckets}',
-            'dividers': dividers,
-            'variance': variance},
-            ignore_index=True)
+            'dividers': [dividers],
+            'variance': variance})
+
+        partitions = pd.concat([partitions, new_rows], ignore_index=True)
 
     if optimal_only:
         partitions = partitions[
@@ -379,4 +385,5 @@ def histoptimize(data: pd.DataFrame, sizes: str, bucket_list: list,
             (b for b in bucket_generator(p.dividers, len(items))))
         columns_added.append(p.column_name)
 
+    pass
     return data, columns_added

@@ -22,8 +22,12 @@ class RecursiveOptimizer(Histoptimizer):
 
     @classmethod
     def min_cost_partition(cls, items: list, k: int, last_item=None, mean=None):
-        """
+        """Recursively find a solution to the minimum variance linear partition problem.
 
+        Takes:
+            items: A list of item sizes
+            k: Number of buckets to partition items into.
+            last_item:
         """
         n = len(items)
         j = k - 1
@@ -41,18 +45,16 @@ class RecursiveOptimizer(Histoptimizer):
 
         for current_divider_location in range(first_possible_position,
                                               last_item + 1):
-            for previous_divider_location in range(j - 1,
-                                                   current_divider_location):
-                (lh_cost, previous_dividers) = cls.min_cost_partition(items,
-                                                                      k - 1,
-                                                                      last_item=current_divider_location - 1,
-                                                                      mean=mean)
-                rh_cost = (sum(items[
-                               current_divider_location:last_item + 1]) - mean) ** 2
-                cost = lh_cost + rh_cost
-                if cost < best_cost:
-                    best_cost = cost
-                    dividers = previous_dividers + [current_divider_location]
+            (lh_cost, previous_dividers) = cls.min_cost_partition(items,
+                                                                  k - 1,
+                                                                  last_item=current_divider_location - 1,
+                                                                  mean=mean)
+            rh_cost = (sum(items[
+                           current_divider_location:last_item + 1]) - mean) ** 2
+            cost = lh_cost + rh_cost
+            if cost < best_cost:
+                best_cost = cost
+                dividers = previous_dividers + [current_divider_location]
         return best_cost, dividers
 
     @classmethod
