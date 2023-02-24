@@ -5,20 +5,17 @@
 ## Overview
 
 Histoptimizer is a Python library and CLI that accepts a DataFrame or ordered
-list  of item sizes, and produces a list of "divider locations" that partition
+list of item sizes, and produces a list of "divider locations" that partition
 the items as evenly as possible into a given number of buckets, minimizing the 
 variance and standard deviation between the bucket sizes.
-
-This can be useful when dividing an ordered set of ordered measurements into
-equal groups for analysis or visualization.
 
 JIT compilation and GPU support through Numba provide great speed improvements
 on supported hardware.
 
-The use case that motivated its creation was: Taking a list of the ~3117
-counties in the U.S., ordering them by some attribute (voting averages,
-population density, median age, etc.), and then distributing them into a number
-of buckets of approximately equal population. 
+The use case that motivated its creation was: given a list of the ~3117
+counties in the U.S., ordered  by some attribute (voting averages,
+population density, median age, etc.), distribute them into a number
+of buckets of approximately equal population, as evenly as possible.
 
 ## Usage
 
@@ -90,6 +87,33 @@ Options:
 
 The Benchmarking CLI can be used to produce comparative performance metrics for
 the various implementations of the algorithm.
+
+```
+Usage: histobench [OPTIONS] PARTITIONER_TYPES [ITEM_SPEC] [BUCKET_SPEC]
+                  [ITERATIONS] [SIZE_SPEC]
+
+  Histobench is a benchmarking harness for testing Histoptimizer partitioner
+  performance.
+
+  By Default it uses random data, and so may not be an accurate benchmark for
+  algorithms whose performance depends upon the data set.
+
+  The PARTITIONER_TYPES parameter is a comma-separated list of partitioners to
+  benchmark, which can be specified as either:
+
+  1. A standard optimizer name, or 2. filepath:classname
+
+  To specify the standard cuda module and also a custom variant, for example,
+
+Options:
+  --debug-info / --no-debug-info
+  --force-jit / --no-force-jit
+  --report PATH
+  --sizes-from PATH
+  --tables / --no-tables
+  --verbose / --no-verbose
+  --help                          Show this message and exit.
+```
 
 ## JIT SIMD Compilation and CUDA acceleration
 

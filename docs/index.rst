@@ -9,8 +9,8 @@ Histoptimizer
    :caption: Contents:
 
 Histoptimizer is a Python library that solves a very specific problem: Given an
-ordered list of sized items, and a number of partitions _n_, it returns a list of
-divider locations that partition the given list into _n_ partitions with the
+ordered list of item sizes, and a number of partitions **n**, it returns a list of
+divider locations that partition the given list into **n** partitions with the
 lowest possible variance across the sums of the items in each partition.
 
 Histoptimizer provides JIT- and SIMD-accelerated implementations on Intel and
