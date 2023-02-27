@@ -48,6 +48,13 @@ def _get_min_cost(bucket: np.array,
 
 
 class NumbaOptimizer(Histoptimizer):
+    """Numba JIT-based implementation of Histoptimizer.
+
+    NumbaOptimizer uses Numba to compile Python functions to native SIMD
+    instructions, significantly improving speed over Histoptimizer.
+
+    Does not work on ARM.
+    """
     name = 'numba'
 
     @classmethod
@@ -59,8 +66,8 @@ class NumbaOptimizer(Histoptimizer):
         return _get_min_cost(bucket, prefix_sum, previous_row, mean)
 
     @classmethod
-    def build_matrices(cls, min_cost, divider_location,
-                       num_buckets, prefix_sum):
+    def _build_matrices(cls, min_cost, divider_location,
+                        num_buckets, prefix_sum):
         mean = prefix_sum[-1] / num_buckets
         for bucket in range(2, min_cost.shape[1]):
             min_cost[:, bucket], divider_location[:, bucket] = \

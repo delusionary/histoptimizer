@@ -174,7 +174,7 @@ def test_bucket_generator():
 
 
 def test_get_prefix_sums():
-    prefix_sums = Histoptimizer.get_prefix_sums([1, 2, 3, 4])
+    prefix_sums = Histoptimizer._get_prefix_sums([1, 2, 3, 4])
     assert list(prefix_sums) == [0.0, 1.0, 3.0, 6.0, 10.0]
 
 

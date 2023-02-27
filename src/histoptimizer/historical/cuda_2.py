@@ -31,8 +31,8 @@ import numpy as np
 from numba import cuda
 from numba.core import config
 
-from histoptimizer.cuda import CUDAOptimizer, init_items_kernel, \
-    init_buckets_kernel
+from histoptimizer.cuda import CUDAOptimizer, _init_items_kernel, \
+    _init_buckets_kernel
 
 
 @cuda.jit
@@ -136,13 +136,13 @@ class CUDAOptimizerItemPairs(CUDAOptimizer):
 
         threads_per_block = 1024
         num_blocks = math.ceil((len(items) / 2) / threads_per_block)
-        init_items_kernel[num_blocks, threads_per_block](min_cost_gpu,
-                                                         divider_location_gpu,
-                                                         item_cost_gpu)  # prefix_sum_gpu)
+        _init_items_kernel[num_blocks, threads_per_block](min_cost_gpu,
+                                                          divider_location_gpu,
+                                                          item_cost_gpu)  # prefix_sum_gpu)
         # We don't really need this, could be a special case in kernel.
-        init_buckets_kernel[1, num_buckets](min_cost_gpu,
-                                            divider_location_gpu,
-                                            item_cost_gpu)  # prefix_sum_gpu)
+        _init_buckets_kernel[1, num_buckets](min_cost_gpu,
+                                             divider_location_gpu,
+                                             item_cost_gpu)  # prefix_sum_gpu)
 
         for bucket in range(2, num_buckets + 1):
             bucket_gpu = cuda.to_device(np.array([bucket]))
@@ -150,14 +150,14 @@ class CUDAOptimizerItemPairs(CUDAOptimizer):
                 min_cost_gpu, divider_location_gpu, prefix_sum_gpu,
                 num_items_gpu, bucket_gpu, mean_value_gpu)
 
-        min_variance, dividers = cls.cuda_reconstruct_partition(
+        min_variance, dividers = cls._cuda_reconstruct_partition(
             items, num_buckets,
             min_cost_gpu,
             divider_location_gpu
         )
 
-        cls.add_debug_info(debug_info, divider_location_gpu, items,
-                           min_cost_gpu, prefix_sum)
+        cls._add_debug_info(debug_info, divider_location_gpu, items,
+                            min_cost_gpu, prefix_sum)
 
         # Restore occupancy warning config setting.
         config.CUDA_LOW_OCCUPANCY_WARNINGS = warnings_enabled

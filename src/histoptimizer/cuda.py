@@ -27,12 +27,13 @@ from histoptimizer import Histoptimizer
 
 threads_per_pair = 512
 item_pairs_per_block = 2
+
 threads_per_block = threads_per_pair * item_pairs_per_block
 
 
 @cuda.jit
-def init_items_kernel(min_cost: np.array, divider_location: np.array,
-                      prefix_sum: np.array):  # pragma: no cover
+def _init_items_kernel(min_cost: np.array, divider_location: np.array,
+                       prefix_sum: np.array):  # pragma: no cover
     """Initialize column 1 of the min_cost matrix.
     """
     thread_idx = cuda.threadIdx.x
@@ -47,8 +48,8 @@ def init_items_kernel(min_cost: np.array, divider_location: np.array,
 
 
 @cuda.jit
-def init_buckets_kernel(min_cost: np.array, divider_location: np.array,
-                        item: np.array):  # pragma: no cover
+def _init_buckets_kernel(min_cost: np.array, divider_location: np.array,
+                         item: np.array):  # pragma: no cover
     """Initialize row 1 of the min_cost matrix.
     """
     # item is a single-element array
@@ -60,12 +61,12 @@ def init_buckets_kernel(min_cost: np.array, divider_location: np.array,
 
 
 @cuda.jit
-def cuda_reconstruct(divider_location: np.array,
-                     min_cost: np.array,
-                     num_items: np.array,
-                     num_buckets: np.array,
-                     partitions: np.array,
-                     min_variance: np.array):  # pragma: no cover
+def _cuda_reconstruct(divider_location: np.array,
+                      min_cost: np.array,
+                      num_items: np.array,
+                      num_buckets: np.array,
+                      partitions: np.array,
+                      min_variance: np.array):  # pragma: no cover
     divider = num_buckets[0]
     next_location = num_items[0]
     min_variance[0] = min_cost[next_location, divider] / num_buckets[0]
@@ -245,14 +246,16 @@ def _cuda_partition_kernel(min_cost: np.array,
 
 
 class CUDAOptimizer(Histoptimizer):
+    """GPU-based implementation of Skiena's dynamic programming algorithm for
+    the linear partition problem with variance cost function."""
     name = 'cuda'
 
     @classmethod
-    def add_debug_info(cls, debug_info: dict,
-                       divider_location_gpu: np.array,
-                       items,
-                       min_cost_gpu,
-                       prefix_sum):
+    def _add_debug_info(cls, debug_info: dict,
+                        divider_location_gpu: np.array,
+                        items,
+                        min_cost_gpu,
+                        prefix_sum):
         if debug_info is not None:
             min_cost = min_cost_gpu.copy_to_host()
             divider_location = divider_location_gpu.copy_to_host()
@@ -262,17 +265,17 @@ class CUDAOptimizer(Histoptimizer):
             debug_info['divider_location'] = divider_location
 
     @classmethod
-    def cuda_reconstruct_partition(cls, items: list[np.float32],
-                                   num_buckets: int,
-                                   min_cost_gpu: np.array,
-                                   divider_location_gpu: np.array):
+    def _cuda_reconstruct_partition(cls, items: list[np.float32],
+                                    num_buckets: int,
+                                    min_cost_gpu: np.array,
+                                    divider_location_gpu: np.array):
         min_variance_gpu = cuda.device_array((1,), dtype=np.float32)
         num_items_gpu = cuda.to_device(np.array([len(items) - 1], dtype=int))
         num_buckets_gpu = cuda.to_device(np.array([num_buckets], dtype=int))
         partition_gpu = cuda.device_array(num_buckets - 1, dtype=int)
-        cuda_reconstruct[1, 1](divider_location_gpu, min_cost_gpu,
-                               num_items_gpu, num_buckets_gpu, partition_gpu,
-                               min_variance_gpu)
+        _cuda_reconstruct[1, 1](divider_location_gpu, min_cost_gpu,
+                                num_items_gpu, num_buckets_gpu, partition_gpu,
+                                min_variance_gpu)
         partition = partition_gpu.copy_to_host()
         min_variance = min_variance_gpu.copy_to_host()[0]
         return min_variance, partition
@@ -280,7 +283,7 @@ class CUDAOptimizer(Histoptimizer):
     @classmethod
     def precompile(cls):
         """
-        Invokes the paritioner on a simple problem, in order to invoke Numba
+        Invokes the partitioner on a simple problem, in order to invoke Numba
         CUDA JIT compiler. The bulk of the execution time of this function will
         be compilation overhead.
         """
@@ -291,19 +294,24 @@ class CUDAOptimizer(Histoptimizer):
                   debug_info: dict = None) \
             -> (list[int], np.float32):
         """
-        Highly parallel GPU-based implementation of Skiena's dynamic programming
+        GPU-based implementation of Skiena's dynamic programming
         algorithm for the linear partition problem.
 
         Arguments:
-            items: An ordered list of items sizes.
-            num_buckets: The number of buckets to partition the items into.
-            debug_info: A dictionary that can accept debug information.
+            items
+                An ordered list of items sizes.
+            num_buckets
+                The number of buckets to partition the items into.
+            debug_info
+                A dictionary that can accept debug information.
 
         Returns:
-            partition_locations: Index of dividers within items. Dividers come
+            partition_locations
+                Index of dividers within items. Dividers come
                 after the item in 0-based indexing and before the item in
                 1-based indexing.
-            min_variance: The variance of the solution defined by
+            min_variance
+                The variance of the solution defined by
                 partition_locations
         """
         warnings_enabled = config.CUDA_LOW_OCCUPANCY_WARNINGS
@@ -335,12 +343,12 @@ class CUDAOptimizer(Histoptimizer):
         # These could be handled using logic in the main kernel, but it does
         # not appear to improve performance.
         num_blocks = math.ceil(len(items) / threads_per_block)
-        init_items_kernel[num_blocks, threads_per_block](min_cost_gpu,
-                                                         divider_location_gpu,
-                                                         item_cost_gpu)
-        init_buckets_kernel[1, num_buckets](min_cost_gpu,
-                                            divider_location_gpu,
-                                            item_cost_gpu)
+        _init_items_kernel[num_blocks, threads_per_block](min_cost_gpu,
+                                                          divider_location_gpu,
+                                                          item_cost_gpu)
+        _init_buckets_kernel[1, num_buckets](min_cost_gpu,
+                                             divider_location_gpu,
+                                             item_cost_gpu)
 
         # Invoke the main computation kernel once for each bucket.
         # Each pair of items (n/2) will have _threads_per_item_pair_ threads.
@@ -357,13 +365,13 @@ class CUDAOptimizer(Histoptimizer):
                 mean_value_gpu)
 
         # Calculate the list of dividers from  min_cost and divider_location
-        min_variance, dividers = cls.cuda_reconstruct_partition(
+        min_variance, dividers = cls._cuda_reconstruct_partition(
             items,
             num_buckets,
             min_cost_gpu,
             divider_location_gpu)
-        cls.add_debug_info(debug_info, divider_location_gpu, items,
-                           min_cost_gpu, prefix_sum)
+        cls._add_debug_info(debug_info, divider_location_gpu, items,
+                            min_cost_gpu, prefix_sum)
 
         config.CUDA_LOW_OCCUPANCY_WARNINGS = warnings_enabled
 
