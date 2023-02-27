@@ -21,7 +21,8 @@ class RecursiveOptimizer(Histoptimizer):
     name = 'recursive'
 
     @classmethod
-    def min_cost_partition(cls, items: list, k: int, last_item=None, mean=None):
+    def recurse(cls, k: int, last_item: int, mean: float,
+                prefix_sums: list):
         """Recursively find a solution to the minimum variance linear partition problem.
 
         Takes:
@@ -29,35 +30,35 @@ class RecursiveOptimizer(Histoptimizer):
             k: Number of buckets to partition items into.
             last_item:
         """
-        n = len(items)
-        j = k - 1
-        if mean is None:
-            mean = sum(items) / k
-        if last_item is None:
-            last_item = n - 1
-        first_possible_position = j
+        first_possible_position = k - 1
         best_cost = np.inf
 
         # The base case is that we are being called to find the optimum location of the first divider for a given
         # location of the second divider
-        if j == 0:
-            return (sum(items[0:last_item + 1]) - mean) ** 2, []
+        if k == 1:
+            return [], (prefix_sums[last_item + 1] - mean) ** 2
 
-        for current_divider_location in range(first_possible_position,
-                                              last_item + 1):
-            (lh_cost, previous_dividers) = cls.min_cost_partition(items,
-                                                                  k - 1,
-                                                                  last_item=current_divider_location - 1,
-                                                                  mean=mean)
-            rh_cost = (sum(items[
-                           current_divider_location:last_item + 1]) - mean) ** 2
+        for cur_div_loc in range(first_possible_position,
+                                 last_item + 1):
+            (previous_dividers, lh_cost) = cls.recurse(k - 1,
+                                                       cur_div_loc - 1,
+                                                       mean,
+                                                       prefix_sums)
+            rh_cost = ((prefix_sums[last_item + 1] - prefix_sums[cur_div_loc])
+                       - mean) ** 2
             cost = lh_cost + rh_cost
             if cost < best_cost:
                 best_cost = cost
-                dividers = previous_dividers + [current_divider_location]
-        return best_cost, dividers
+                dividers = previous_dividers + [cur_div_loc]
+        try:
+            return dividers, best_cost
+        except Exception as e:
+            pass
 
     @classmethod
     def partition(cls, items, k, debug_info=None):
-        variance, dividers = cls.min_cost_partition(items, k)
-        return dividers, variance / k
+        prefix_sums = cls._get_prefix_sums(items)
+        dividers, msd = cls.recurse(k, len(items) - 1,
+                                    sum(items) / k,
+                                    prefix_sums)
+        return dividers, msd / k
