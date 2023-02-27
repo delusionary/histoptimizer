@@ -7,7 +7,7 @@ def test_main_succeeds():
     runner = click.testing.CliRunner()
     # FILE ID_COLUMN SIZE_COLUMN PARTITIONS
     result = runner.invoke(cli.cli, ['fixtures/sortframe.csv',
-                                     'id', 'size', '2-4'])
+                                     'size', '2-4'])
     assert result.exit_code == 0
 
 

@@ -93,7 +93,6 @@ def parse_set_spec(spec: str, substitute: dict = None) -> list:
 
 @click.command()
 @click.argument('file', type=click.File('rb'))
-@click.argument('id_column', type=str)
 @click.argument('size_column', type=str)
 @click.argument('partitions', type=str)
 @click.option('-l', '--limit', type=int, default=None,
@@ -111,11 +110,11 @@ def parse_set_spec(spec: str, substitute: dict = None) -> list:
 @click.option('-s', '--sort-key', type=str, default=None,
               help='Optionally sort records by this column name before '
                    'partitioning.')
-@click.option('-t', '--timing/--no-timing', default=False,
-              help='Print partitioner timing information to stderr')
-@click.option('-i', '--implementation', type=str, default='numba',
+@click.option('-i', '--id-column', type=str, default=None,
+              help='Optional ID column to print with brief output.')
+@click.option('-p', '--partitioner', type=str, default='numba',
               help='Use the named partitioner implementation. Defaults to '
-                   '"dynamic_numba". If you have an NVidia GPU '
+                   '"numba". If you have an NVidia GPU '
                    'use "cuda" for better performance')
 @click.option('-o', '--output', type=click.File('w'), default=sys.stdout,
               help='Send output to the given file. Defaults to stdout.')
@@ -123,13 +122,18 @@ def parse_set_spec(spec: str, substitute: dict = None) -> list:
               type=click.Choice(['csv', 'json'], case_sensitive=False),
               default='csv',
               help='Specify output format. Pandas JSON or CSV. Defaults to CSV')
-def cli(file, id_column, size_column, partitions, limit, ascending,
-        print_all, column_prefix, sort_key, timing, implementation, output,
+def cli(file, size_column, partitions, limit, ascending,
+        print_all, column_prefix, sort_key, id_column, partitioner, output,
         output_format):
-    """
-    Given a CSV, a row name column, a size column, sort key, and a number of
-    buckets, optionally sort the CSV by the given key, then distribute the
-    ordered keys as evenly as possible to the given number of buckets.
+    """Partition ordered items in a CSV into a given number of buckets, evenly.
+
+    Given a CSV or JSON Dataframe, a size column name, and a number of buckets,
+    Histoptimizer will add a column which gives the partition number for each
+    row that optimally divides the given items into the buckets so as to
+    minimize the variance from mean of the summed items in each bucket.
+
+    Additional features allow doing a list of bucket sizes in one go, sorting
+    items beforehand, and producing output with only relevant columns.
 
     Example:
 
@@ -155,10 +159,10 @@ def cli(file, id_column, size_column, partitions, limit, ascending,
 
     bucket_list = parse_set_spec(partitions)
 
-    if implementation in standard_implementations:
-        partitioner = standard_implementations[implementation]
+    if partitioner in standard_implementations:
+        partitioner = standard_implementations[partitioner]
     else:
-        raise ValueError(f'Unknown implementation {implementation}')
+        raise ValueError(f'Unknown implementation {partitioner}')
 
     try:
         data, partition_columns = histoptimize(data,
