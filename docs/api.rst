@@ -26,7 +26,10 @@ Larger problem sets should use NumbaOptimizer or CUDAOptimizer subclasses
 depending on what hardware is available
 
 .. autoclass:: histoptimizer.Histoptimizer
-   :members:
+
+.. autofunction:: histoptimizer.Histoptimizer.partition
+
+.. autofunction:: histoptimizer.Histoptimizer.precompile
 
 ==============
 NumbaOptimizer
