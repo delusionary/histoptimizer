@@ -12,19 +12,22 @@ variance and standard deviation between the bucket sizes.
 JIT compilation and GPU support through Numba provide great speed improvements
 on supported hardware.
 
-The use case that motivated its creation was: given a list of the ~3117
+The problem that motivated its creation was: given a list of the ~3117
 counties in the U.S., ordered  by some attribute (voting averages,
 population density, median age, etc.), distribute them into a number
 of buckets of approximately equal population, as evenly as possible.
 
+That job being done, it is of questionable further use. It is fun to work on,
+though. So.
+
 ## Usage
 
-Histoptimizer provides several APIs and tools:
+Histoptimizer provides two APIs and two command-line tools:
 
 ### NumPY array partitioner
 
 Several implementations of the partitioning algorithm can be called directly
-with a list or array of items sizes and a number of buckets. They return an
+with a list or array of item sizes and a number of buckets. They return an
 array of divider locations (dividers come _after_ the given item in 1-based
 indexing, or _before_ the given item in 0-based indexing) and the variance of
 the given partition.
@@ -85,8 +88,8 @@ Options:
 
 ### Benchmarking CLI
 
-The Benchmarking CLI can be used to produce comparative performance metrics for
-the various implementations of the algorithm.
+The Benchmarking CLI can be used to produce comparative performance metrics for 
+various implementations of the algorithm.
 
 ```
 Usage: histobench [OPTIONS] PARTITIONER_TYPES [ITEM_SPEC] [BUCKET_SPEC]
@@ -119,4 +122,4 @@ Options:
 
 Histoptimizer supports Just-in-time compilation for both CPU and NVidia CUDA
 GPUs using Numba. For larger problems these implementations can be hundreds or
-thousands of times faster than the Python implementation alone.
+thousands of times faster than the pure Python implementation.

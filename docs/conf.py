@@ -5,6 +5,8 @@
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+from pallets_sphinx_themes import get_version
+from pallets_sphinx_themes import ProjectLink
 
 project = 'Histoptimizer'
 copyright = '2023, Kelly Joyner'
@@ -22,12 +24,48 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'alabaster'
+html_theme = 'jinja'
 html_static_path = ['_static']
+
+html_css_files = [
+    'css/custom.css',
+]
+
+html_theme_options = {"index_sidebar_logo": False}
+html_context = {
+    "project_links": [
+        ProjectLink("PyPI Releases", "https://pypi.org/project/histoptimizer/"),
+        ProjectLink("Source Code",
+                    "https://github.com/delusionary/histoptimizer/"),
+        ProjectLink("Issue Tracker",
+                    "https://github.com/delusionary/histoptimizer/issues/"),
+        ProjectLink("Website", "https://histoptimizer.org"),
+    ]
+}
+html_sidebars = {
+    "index": ["project.html",
+              "globaltoc.html",
+              "localtoc.html",
+              "searchbox.html",
+              "relations.html"],
+    "**": ["project.html",
+           "globaltoc.html",
+           "localtoc.html",
+           "searchbox.html",
+           "relations.html"],
+}
+html_static_path = ["_static"]
+# html_favicon = "_static/histoptimizer-icon.png"
+# html_logo = "_static/histoptimizer-logo-sidebar.png"
+html_title = f"Histoptimizer Documentation ({release})"
+html_show_sourcelink = False
 
 extensions = [
     'sphinx.ext.duration',
     'sphinx.ext.doctest',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
+    'sphinxcontrib.programoutput',
+    'nbsphinx',
+    'pallets_sphinx_themes'
 ]
