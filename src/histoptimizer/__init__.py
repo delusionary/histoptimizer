@@ -29,7 +29,7 @@ class Histoptimizer(object):
 
     See:
 
-    _The Algorithm Design Manual_, S. Skiena. Springer, London, 2008
+    *The Algorithm Design Manual* by Steven Skiena. Springer, London, 2008.
          Section 8.5: The Partition Problem, pp 294-297
 
     See Also:
@@ -56,15 +56,18 @@ class Histoptimizer(object):
             raise ValueError("debug_info should be None or a dictionary")
 
     @classmethod
-    def reconstruct_partition(cls, divider_location, num_items, num_buckets) \
+    def _reconstruct_partition(cls, divider_location, num_items, num_buckets) \
             -> np.array:
         """Return a list of optimal divider locations given a location matrix.
 
         Arguments:
-            divider_location: A matrix giving the location of dividers that
+            divider_location
+                A matrix giving the location of dividers that
                 minimize variance.
-            num_items: The number of items to be partitioned.
-            num_buckets: The number of buckets to partition the items into.
+            num_items
+                The number of items to be partitioned.
+            num_buckets
+                The number of buckets to partition the items into.
         """
         if num_buckets < 2:
             return np.array(0)
@@ -78,7 +81,7 @@ class Histoptimizer(object):
         return partitions
 
     @classmethod
-    def get_prefix_sums(cls, item_sizes: list[np.float32]) -> np.array:
+    def _get_prefix_sums(cls, item_sizes: list[np.float32]) -> np.array:
         """
         Given a list of item sizes, return a NumPy float32 array where item 0 is
         0 and item *n* is the cumulative sum of item sizes 0..n-1.
@@ -88,7 +91,8 @@ class Histoptimizer(object):
         subtraction: prefix_sums[n] - prefix_sums[m]
 
         Args:
-            item_sizes: A list of item sizes, integer or float.
+            item_sizes
+                A list of item sizes, integer or float.
 
         Returns:
             NumPy float32 array containing a [0]-prefixed cumulative sum.
@@ -98,7 +102,7 @@ class Histoptimizer(object):
         return prefix_sum
 
     @classmethod
-    def init_matrices(cls, num_buckets: int, prefix_sum: list[np.float32]) \
+    def _init_matrices(cls, num_buckets: int, prefix_sum: list[np.float32]) \
             -> (np.array, np.array):
         """Create and initialize min_cost and divider_location matrices.
 
@@ -106,14 +110,19 @@ class Histoptimizer(object):
         initializes the cells where the base relation values are stored.
 
         Args:
-            num_buckets: The number of
-            prefix_sum: List of item sizes in prefix sum form.
+            num_buckets
+                The number of buckets to partition items into.
+            prefix_sum
+                List of item sizes in prefix sum form.
 
         Returns:
             A tuple:
 
-            min_cost:
-            divider_location:
+            min_cost
+                Matrix to minimum cost information.
+            divider_location
+                Matrix to hold divider locations that give corresponding
+                min_cost values.
         """
         n = len(prefix_sum)
         min_cost = np.zeros((n, num_buckets + 1), dtype=np.float32)
@@ -126,8 +135,8 @@ class Histoptimizer(object):
         return min_cost, divider_location
 
     @classmethod
-    def build_matrices(cls, min_cost: np.array, divider_location: np.array,
-                       num_buckets: int, prefix_sum: list[np.float32]) \
+    def _build_matrices(cls, min_cost: np.array, divider_location: np.array,
+                        num_buckets: int, prefix_sum: list[np.float32]) \
             -> (np.array, np.array):
         """Compute min cost and divider location matrices.
 
@@ -137,22 +146,26 @@ class Histoptimizer(object):
         size of each partition is minimized.
 
         Arguments:
-            min_cost: Array to hold minimum achievable variance values
+            min_cost
+                Array to hold minimum achievable variance values
                 (see Returns section). The first row and column should be
                 initialized.
-            divider_location: Array to hold divider locations (see Returns
-                section).
-            num_buckets: Number of buckets to distribute the items into.
-            prefix_sum: List of sums such that prefix_sum[n] = sum(1..n)
+            divider_location
+                Array to hold divider locations (see Returns section).
+            num_buckets
+                Number of buckets to distribute the items into.
+            prefix_sum
+                List of sums such that prefix_sum[n] = sum(1..n)
                 of item sizes. This representation is more efficient than
                 storing the item sizes themselves, since only this sum is
                 needed.
 
         Returns:
 
-            Returns a tuple of references to the input arrays, which are
-                modified in place.
-            min_cost: Matrix giving, For a given [item, divider] combination,
+            Returns a tuple of references to the input arrays, which are modified in place.
+
+            min_cost
+                Matrix giving, For a given [item, divider] combination,
                 the minimum achievable variance for placing [divider-1] dividers
                 between elements 1..item.
             divider_location
@@ -207,30 +220,35 @@ class Histoptimizer(object):
         variance over the sum of the items sizes in each bucket.
 
         Arguments:
-            item_sizes: An iterable of float- or float-compatible values
-                        representing a sorted series of item sizes.
-            num_buckets: The number of buckets to partition the items into.
-            debug_info: A dictionary that can accept debug information.
+            item_sizes
+                An iterable of float- or float-compatible values
+                representing a sorted series of item sizes.
+            num_buckets
+                The number of buckets to partition the items into.
+            debug_info
+                A dictionary that can accept debug information.
 
         Returns:
             A tuple:
 
-            partition_locations: Index of dividers within items. Dividers come
+            partition_locations
+                Index of dividers within items. Dividers come
                 after the item in 0-based indexing and before the item in
                 1-based indexing.
-            min_variance: The variance of the solution defined by
+            min_variance
+                The variance of the solution defined by
                 `partition_locations`
         """
         cls.check_parameters(item_sizes, num_buckets, debug_info)
         num_items = len(item_sizes)
 
-        prefix_sum = cls.get_prefix_sums(item_sizes)
+        prefix_sum = cls._get_prefix_sums(item_sizes)
 
-        (min_cost, divider_locs) = cls.init_matrices(num_buckets, prefix_sum)
-        (min_cost, divider_locs) = cls.build_matrices(min_cost,
-                                                      divider_locs,
-                                                      num_buckets,
-                                                      prefix_sum)
+        (min_cost, divider_locs) = cls._init_matrices(num_buckets, prefix_sum)
+        (min_cost, divider_locs) = cls._build_matrices(min_cost,
+                                                       divider_locs,
+                                                       num_buckets,
+                                                       prefix_sum)
 
         if debug_info is not None:
             debug_info['items'] = item_sizes
@@ -238,8 +256,8 @@ class Histoptimizer(object):
             debug_info['min_cost'] = min_cost
             debug_info['divider_location'] = divider_locs
 
-        partition = cls.reconstruct_partition(divider_locs, num_items,
-                                              num_buckets)
+        partition = cls._reconstruct_partition(divider_locs, num_items,
+                                               num_buckets)
         return [partition, min_cost[num_items, num_buckets] / num_buckets]
 
 
@@ -250,8 +268,10 @@ def get_partition_sums(dividers, item_sizes) -> list[np.float32]:
     of the items in each partition.
 
     Args:
-        dividers: A list of divider locations.
-        item_sizes: A list of item sizes
+        dividers
+            A list of divider locations.
+        item_sizes
+            A list of item sizes
 
     Returns:
         A list where item N is the sum of the item_sizes
@@ -283,10 +303,11 @@ def bucket_generator(dividers: np.array, num_items: int) -> int:
     a partitioning column.
 
     Args:
-        dividers: A list of divider locations. Dividers are
-            considered as coming before the given list index with 0-based array
-            indexing.
-        num_items: The number of items in the list to be partitioned.
+        dividers
+            A list of divider locations. Dividers are considered as coming
+            before the given list index with 0-based array indexing.
+        num_items
+            The number of items in the list to be partitioned.
 
     Yields:
         dividers[0] 1s, followed by divider[1]-divider[0] 2s,
@@ -319,9 +340,12 @@ def get_partition_series(sizes: pd.Series, num_buckets: int, partitioner) \
     standard deviation.
 
     Args:
-        sizes (pandas.Series): Series of object sizes.
-        num_buckets (int): Number of buckets to partition items into.
-        partitioner (function): Partitioner function
+        sizes (pandas.Series)
+            Series of object sizes.
+        num_buckets (int)
+            Number of buckets to partition items into.
+        partitioner (function)
+            Partitioner function
 
     Returns:
         pandas.Series: Series thing.
@@ -345,28 +369,34 @@ def histoptimize(data: pd.DataFrame, sizes: str, bucket_list: list,
     variance/standard deviation over all buckets.
 
     Args:
-        data (DataFrame): The DataFrame to add columns to.
-        sizes (str): Column to get size values from.
-        bucket_list (list): A list of integer bucket sizes.
-        column_name (str): Prefix to be added to the number of buckets to get
+        data (DataFrame)
+            The DataFrame to add columns to.
+        sizes (str)
+            Column to get size values from.
+        bucket_list (list)
+            A list of integer bucket sizes.
+        column_name (str)
+            Prefix to be added to the number of buckets to get
             the column name.
-        partitioner (class): Class that implements the Histoptimizer API.
-        optimal_only (bool): If true, add only one column, for the number of
+        partitioner (class):
+            Class that implements the Histoptimizer API.
+        optimal_only (bool):
+            If true, add only one column, for the number of
             buckets with the lowest variance.
 
     Returns:
-        DataFrame: Original DataFrame with one or more columns added.
-        list(str): List of column names added to the original DataFrame
+        A tuple of values:
+
+        DataFrame
+            Original DataFrame with one or more columns added.
+        list(str)
+            List of column names added to the original DataFrame
     """
     partitions = pd.DataFrame(columns=['column_name', 'dividers', 'variance'])
     items = data[[sizes]].astype('float32').to_numpy(dtype=np.float32)
     for buckets in bucket_list:
         dividers, variance = partitioner.partition(items, buckets)
-        # partitions = partitions.append({
-        #     'column_name': f'{column_name}{buckets}',
-        #     'dividers': dividers,
-        #     'variance': variance},
-        #     ignore_index=True)
+
         new_rows = pd.DataFrame({
             'column_name': f'{column_name}{buckets}',
             'dividers': [dividers],
@@ -385,5 +415,4 @@ def histoptimize(data: pd.DataFrame, sizes: str, bucket_list: list,
             (b for b in bucket_generator(p.dividers, len(items))))
         columns_added.append(p.column_name)
 
-    pass
     return data, columns_added
