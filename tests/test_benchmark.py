@@ -32,7 +32,7 @@ def test_main_succeeds(tmp_path):
                                   '--report', str(report_file),
                                   'numba,dynamic', '5-6', '3-4', '1'])
     filed_report = pd.read_json(str(report_file), orient='records').drop(
-        ['variance', 'elapsed_seconds'], axis=1)
+        ['variance', 'elapsed_seconds', 'item_set_id'], axis=1)
     expected_report = pd.read_json('fixtures/benchmark_report.json')
     assert np.array_equal(filed_report.to_numpy(), expected_report.to_numpy())
 
@@ -40,7 +40,7 @@ def test_main_succeeds(tmp_path):
 def test_benchmark(partitioner_list, specified_items_list):
     result = benchmark.benchmark(partitioner_list, (4, 5, 6), (3, 4),
                                  specified_items_sizes=specified_items_list)
-    result = result.drop(['elapsed_seconds', 'variance', 'items'], axis=1)
+    result = result.drop(['elapsed_seconds', 'variance', 'item_set_id'], axis=1)
     # Turn the dividers numpy array into a list to make it round-trip safe.
     result['dividers'] = result['dividers'].apply(list)
     expected_report = pd.read_json('fixtures/test_benchmark_report.json')

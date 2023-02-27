@@ -19,6 +19,7 @@ TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 """
 import platform
+import uuid
 import re
 import sys
 import time
@@ -69,11 +70,13 @@ def partitioner_pivot(df: pd.DataFrame, partitioner) -> pd.DataFrame:
     # buckets in columns.
 
     Args:
-        df (DataFrame): Results DataFrame.
-        partitioner: partitioner name to isolate.
-    Returns:
+        df (DataFrame)
+            Results DataFrame.
+        partitioner (str)
+            partitioner name to isolate.
 
-    Raises:
+    Returns:
+        Pivoted Dataframe with performance data for the specified partitioner.
     """
     return df[df.partitioner == partitioner].groupby(
         ['num_items', 'buckets'],
@@ -87,25 +90,36 @@ def partitioner_pivot(df: pd.DataFrame, partitioner) -> pd.DataFrame:
 def benchmark(partitioner_list: list, item_list: list, bucket_list: list,
               iterations: int = 1,
               begin_range: int = 1, end_range: int = 10,
-              specified_items_sizes: list = None, verbose: bool = False) \
+              specified_items_sizes: list = None, verbose: bool = False,
+              include_items_in_results: bool = False) \
         -> pd.DataFrame:
     """Benchmark a given list of partitioners against the same data.
 
     The caller can specify that the partitioners be
 
     Args:
-        partitioner_list: List of partitioner functions to benchmark.
-        item_list: A list of item counts to benchmark.
-        bucket_list: A list bucket counts to benchmark.
-        iterations: Number of iterations to test each item_list x bucket_list
+        partitioner_list
+            List of partitioner functions to benchmark.
+        item_list
+            A list of item counts to benchmark.
+        bucket_list
+            A list bucket counts to benchmark.
+        iterations
+            Number of iterations to test each item_list x bucket_list
             combination.
-        begin_range: For random item generation, the lower bound of the random
+        begin_range
+            For random item generation, the lower bound of the random
             size values.
-        end_range: For random item generation, the upper bound of the random
+        end_range
+            For random item generation, the upper bound of the random
             size values.
-        specified_items_sizes: An ordered list of item sizes. Must be as long as
+        specified_items_sizes
+            An ordered list of item sizes. Must be as long as
             the max value of item_list.
-        verbose: If true, log debugging information.
+        verbose
+            If true, log debugging information.
+        include_items_in_results
+            If true, include the items used in the test in every result row.
 
     Returns:
         pandas.DataFrame: DataFrame containing one row for each
@@ -113,26 +127,40 @@ def benchmark(partitioner_list: list, item_list: list, bucket_list: list,
 
         Each row contains the following columns:
 
-            partitioner (str): Name of the partitioner used in this run.
-            num_items: Number of items in this run.
-            buckets: Number of buckets in this run.
-            iteration: Iteration number for this run.
-            variance: Variance of the discovered solution.
-            elapsed_seconds: Number of seconds to find the solution.
-            dividers (list): Divider locations for the optimal solution.
-            items: List of items sizes for this run.
+            partitioner (str)
+                Name of the partitioner used in this run.
+            num_items
+                Number of items in this run.
+            buckets
+                Number of buckets in this run.
+            iteration
+                Iteration number for this run.
+            item_set_id
+                32-bit hex form of a random UUID generated when the items
+                used in the problem were generated.
+            variance
+                Variance of the discovered solution.
+            elapsed_seconds
+                Number of seconds to find the solution.
+            dividers (list)
+                Divider locations for the optimal solution.
+            items
+                List of items sizes for this run, if `include_item_sizes`
+                is `True`
+
 
     Raises:
     """
     r = pd.DataFrame(
         columns=['partitioner', 'num_items', 'buckets', 'iteration',
-                 'variance', 'elapsed_seconds', 'dividers', 'items'])
+                 'variance', 'elapsed_seconds', 'dividers', 'item_set_id'])
     dividers = None
 
     for num_items in item_list:
         for num_buckets in bucket_list:
             results = []
             for i in range(1, iterations + 1):
+                item_set_id = uuid.uuid4().hex
                 if specified_items_sizes is None:
                     items = np.random.randint(begin_range, end_range + 1,
                                               size=num_items)
@@ -143,16 +171,22 @@ def benchmark(partitioner_list: list, item_list: list, bucket_list: list,
                     dividers, variance = partitioner.partition(items,
                                                                num_buckets)
                     end = time.time()
-                    results.append({
+                    new_result = {
                         'partitioner': partitioner.name,
                         'num_items': num_items,
                         'buckets': num_buckets,
                         'iteration': i,
+                        'item_set_id': item_set_id,
                         'variance': variance,
                         'elapsed_seconds': end - start,
                         'dividers': dividers,
-                        'items': items
-                    })
+                    }
+
+                    if include_items_in_results:
+                        new_result['items'] = items
+
+                    results.append(new_result)
+
             r = pd.concat([r, pd.DataFrame.from_records(results)])
             mean = r[(r.num_items == num_items) & (
                     r.buckets == num_buckets)].groupby('partitioner').mean(
@@ -180,10 +214,10 @@ def echo_tables(partitioner_list: list, r: pd.DataFrame):
     """
     for partitioner in (p.name for p in partitioner_list):
         grid = partitioner_pivot(r, partitioner)
-        items_width = ceil(max(log10(grid.index.max()),
-                               1)) + 2  # wide enough for the widest value.
-        width = ceil(max(log10(grid.max().max()),
-                         1)) + 6  # Max digits we have + ".000" + 2 spaces
+        # wide enough for the widest value.
+        items_width = ceil(log10(max([grid.index.max(), 10]))) + 2
+        # Max digits we have + ".000" + 2 spaces
+        width = ceil(log10(max([grid.max().max(), 10]))) + 6
         click.echo(
             f'Partitioner: {partitioner}\n{"".rjust(items_width)}' + ''.join(
                 [str(x).rjust(width) for x in grid.columns]))
@@ -267,8 +301,10 @@ def write_report(r: pd.DataFrame, report: str):
               default=None)
 @click.option('--tables/--no-tables', type=bool, default=False)
 @click.option('--verbose/--no-verbose', type=bool, default=False)
+@click.option('--include-items/--no-include-items', type=bool, default=False)
 def cli(partitioner_types, item_spec, bucket_spec, iterations, size_spec,
-        debug_info, force_jit, report, sizes_from, tables, verbose):
+        debug_info, force_jit, report, sizes_from, tables, verbose,
+        include_items):
     """
     Histobench is a benchmarking harness for testing Histoptimizer partitioner
     performance.
@@ -319,7 +355,7 @@ def cli(partitioner_types, item_spec, bucket_spec, iterations, size_spec,
 
     r = benchmark(partitioner_list, item_list, bucket_list,
                   iterations, begin_range, end_range, specified_items_sizes,
-                  verbose)
+                  verbose, include_items)
 
     if tables:
         echo_tables(partitioner_list, r)
