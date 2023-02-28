@@ -1,12 +1,13 @@
 [![codecov](https://codecov.io/github/delusionary/histoptimizer/branch/main/graph/badge.svg?token=FCLW50JSR9)](https://codecov.io/github/delusionary/histoptimizer)
+[![codecov](https://codecov.io/github/delusionary/histoptimizer/branch/main/graph/badge.svg?token=FCLW50JSR9)](https://codecov.io/github/delusionary/histoptimizer)
 
 # Histoptimizer
 
-<center><img src="docs/_static/histoptimizer-spirit-animal.png" width="50%"/></center>
+<img src="docs/_static/histoptimizer-spirit-animal.png" width="50%"/>
 
 ## Overview
 
-Histoptimizer is a Python library and CLI that accepts a DataFrame or ordered
+Histoptimizer ([histoptimizer.org](https://histoptimizer.org)) is a Python library and CLI that accepts a DataFrame or ordered
 list of item sizes, and produces a list of "divider locations" that partition
 the items as evenly as possible into a given number of buckets, minimizing the 
 variance and standard deviation between the bucket sizes.
