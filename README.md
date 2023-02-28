@@ -2,6 +2,8 @@
 
 # Histoptimizer
 
+<center><img src="docs/_static/histoptimizer-spirit-animal.png" width="50%"/></center>
+
 ## Overview
 
 Histoptimizer is a Python library and CLI that accepts a DataFrame or ordered
