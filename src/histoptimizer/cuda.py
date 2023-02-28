@@ -22,6 +22,7 @@ import math
 import numpy as np
 from numba import cuda
 from numba.core import config
+from typing import List
 
 from histoptimizer import Histoptimizer
 
@@ -265,7 +266,7 @@ class CUDAOptimizer(Histoptimizer):
             debug_info['divider_location'] = divider_location
 
     @classmethod
-    def _cuda_reconstruct_partition(cls, items: list[np.float32],
+    def _cuda_reconstruct_partition(cls, items: List[np.float32],
                                     num_buckets: int,
                                     min_cost_gpu: np.array,
                                     divider_location_gpu: np.array):
@@ -290,9 +291,9 @@ class CUDAOptimizer(Histoptimizer):
         cls.partition([1, 4, 6, 9], 3)
 
     @classmethod
-    def partition(cls, items: list[np.float32], num_buckets: int,
+    def partition(cls, items: List[np.float32], num_buckets: int,
                   debug_info: dict = None) \
-            -> (list[int], np.float32):
+            -> (List[int], np.float32):
         """
         GPU-based implementation of Skiena's dynamic programming
         algorithm for the linear partition problem.

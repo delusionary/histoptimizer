@@ -16,6 +16,8 @@ THIS SOFTWARE.
 import numpy as np
 import pandas as pd
 
+from typing import List
+
 
 class Histoptimizer(object):
     """Base class for objects implementing the Histoptimizer API.
@@ -81,7 +83,7 @@ class Histoptimizer(object):
         return partitions
 
     @classmethod
-    def _get_prefix_sums(cls, item_sizes: list[np.float32]) -> np.array:
+    def _get_prefix_sums(cls, item_sizes: List[np.float32]) -> np.array:
         """
         Given a list of item sizes, return a NumPy float32 array where item 0 is
         0 and item *n* is the cumulative sum of item sizes 0..n-1.
@@ -102,7 +104,7 @@ class Histoptimizer(object):
         return prefix_sum
 
     @classmethod
-    def _init_matrices(cls, num_buckets: int, prefix_sum: list[np.float32]) \
+    def _init_matrices(cls, num_buckets: int, prefix_sum: List[np.float32]) \
             -> (np.array, np.array):
         """Create and initialize min_cost and divider_location matrices.
 
@@ -136,7 +138,7 @@ class Histoptimizer(object):
 
     @classmethod
     def _build_matrices(cls, min_cost: np.array, divider_location: np.array,
-                        num_buckets: int, prefix_sum: list[np.float32]) \
+                        num_buckets: int, prefix_sum: List[np.float32]) \
             -> (np.array, np.array):
         """Compute min cost and divider location matrices.
 
@@ -211,7 +213,7 @@ class Histoptimizer(object):
     # noinspection DuplicatedCode
     @classmethod
     def partition(cls, item_sizes, num_buckets: int, debug_info: dict = None
-                  ) -> (list[int], np.float32):
+                  ) -> (List[int], np.float32):
         """Given a list of item sizes, partition the items into buckets evenly.
 
         This function returns a set of partition indexes, or divider locations,
@@ -261,7 +263,7 @@ class Histoptimizer(object):
         return [partition, min_cost[num_items, num_buckets] / num_buckets]
 
 
-def get_partition_sums(dividers, item_sizes) -> list[np.float32]:
+def get_partition_sums(dividers, item_sizes) -> List[np.float32]:
     """Get a list of the total sizes of each partition.
 
     Given a list of divider locations and a list of items, return a list the sum
@@ -358,12 +360,12 @@ def get_partition_series(sizes: pd.Series, num_buckets: int, partitioner) \
 def histoptimize(data: pd.DataFrame, sizes: str, bucket_list: list,
                  column_name: str,
                  partitioner: object, optimal_only=False) \
-        -> (pd.DataFrame, list[str]):
+        -> (pd.DataFrame, List[str]):
     """
     Histoptimize takes a Pandas DataFrame and adds additional columns, one for
     each integer in bucket_list.
 
-    The additional columns are named `column_name` + {bucket_list[i]} and
+    The additional columns are named `column_name` + {bucket_List[i]} and
     contain for each row a bucket number such that the rows are distributed into
     the given number of buckets in such a manner as to minimize the
     variance/standard deviation over all buckets.
