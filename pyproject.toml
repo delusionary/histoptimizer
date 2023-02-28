@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "histoptimizer"
-version = "0.9.6"
+version = "1.0"
 description = "A library for creating even partitions of ordered items."
 authors = ["Kelly Joyner <de@lusion.org>"]
 license = "BSD 0-Clause License"
