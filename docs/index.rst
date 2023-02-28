@@ -32,7 +32,6 @@ Installation
 To get started with Histoptimizer, install the latest stable release via `pip <https://pip.pypa.io/en/stable/>`_:
 
 .. code-block:: bash
-    :caption: Bash
 
     pip install histoptimizer
 
@@ -70,7 +69,7 @@ easily by other methods.
 
 There may be practical applications; if so, please don't tell me. There's a
 certain platonic purity to it right now. Freeing, if you think about it. It does
-nothing of value, but does it very quickly, so it makes it up in volume.
+nothing of value, but does it very quickly, so as to make it up in volume.
 
 ================
 About the Author

@@ -52,8 +52,6 @@ class NumbaOptimizer(Histoptimizer):
 
     NumbaOptimizer uses Numba to compile Python functions to native SIMD
     instructions, significantly improving speed over Histoptimizer.
-
-    Does not work on ARM.
     """
     name = 'numba'
 

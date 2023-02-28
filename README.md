@@ -25,7 +25,7 @@ has continued to this point.
 
 Histoptimizer provides two APIs and two command-line tools:
 
-### NumPY array partitioner
+### NumPy array partitioner
 
 Several implementations of the partitioning algorithm can be called directly
 with a list or array of item sizes and a number of buckets. They return an
