@@ -11,7 +11,7 @@ from pallets_sphinx_themes import ProjectLink
 project = 'Histoptimizer'
 copyright = '2023, Kelly Joyner'
 author = 'Kelly Joyner'
-release = '0.9'
+release = '1.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -31,8 +31,8 @@ html_theme_options = {"index_sidebar_logo": True}
 
 html_context = {
     "project_links": [
-        ProjectLink("PyPI Releases",
-                    "https://pypi.org/manage/project/histoptimizer/releases/"),
+        ProjectLink("PyPI Project",
+                    "https://pypi.org/project/histoptimizer/"),
         ProjectLink("Source Code",
                     "https://github.com/delusionary/histoptimizer/"),
         ProjectLink("Issue Tracker",

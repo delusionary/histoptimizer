@@ -11,7 +11,6 @@ Histoptimizer
     Quickstart <Quickstart.ipynb>
     API Reference <api>
     CLI Guide <cli>
-    Appendix: A Visual Guide to Dynamic Programming (draft) <Histoptimizing.ipynb>
 
 Histoptimizer is a Python library that solves a very specific problem: Given an
 ordered list of item sizes, and a number of partitions **n**, it returns a list of
