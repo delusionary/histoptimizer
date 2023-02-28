@@ -6,12 +6,12 @@
 
 ## Overview
 
-Histoptimizer ([histoptimizer.org](https://histoptimizer.org),
-[documentation](https://histoptimizer.org/docs)) is a Python library and CLI that accepts
+Histoptimizer is a Python library and CLI that accepts
 a DataFrame or ordered list of item sizes, and produces a list of "divider
 locations" that partition the items as evenly as possible into a given number of
 buckets, minimizing the variance and standard deviation between the bucket
-sizes.
+sizes. You can read detailed documentation at the project web site,
+[histoptimizer.org](https://histoptimizer.org).
 
 JIT compilation and GPU support through Numba provide great speed improvements
 on supported hardware, enabling problem sets of a million items or more.
