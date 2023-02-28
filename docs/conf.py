@@ -27,10 +27,12 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 html_theme = 'jinja'
 html_static_path = ['_static']
 
-html_theme_options = {"index_sidebar_logo": False}
+html_theme_options = {"index_sidebar_logo": True}
+
 html_context = {
     "project_links": [
-        ProjectLink("PyPI Releases", "https://pypi.org/project/histoptimizer/"),
+        ProjectLink("PyPI Releases",
+                    "https://pypi.org/manage/project/histoptimizer/releases/"),
         ProjectLink("Source Code",
                     "https://github.com/delusionary/histoptimizer/"),
         ProjectLink("Issue Tracker",
@@ -38,12 +40,14 @@ html_context = {
         ProjectLink("Website", "https://histoptimizer.org"),
     ]
 }
+
 html_sidebars = {
     "index": ["project.html",
               "globaltoc.html",
               "localtoc.html",
               "searchbox.html",
               "relations.html"],
+
     "**": ["project.html",
            "globaltoc.html",
            "localtoc.html",
@@ -51,8 +55,8 @@ html_sidebars = {
            "relations.html"],
 }
 html_static_path = ["_static"]
-# html_favicon = "_static/histoptimizer-icon.png"
-# html_logo = "_static/histoptimizer-logo-sidebar.png"
+html_favicon = "_static/histoptimizer-favicon.png"
+html_logo = "_static/histoptimizer-spirit-animal.png"
 html_title = f"Histoptimizer Documentation ({release})"
 html_show_sourcelink = False
 

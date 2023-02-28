@@ -4,6 +4,7 @@ Histoptimizer
 
 "A heartbreaking work of monumental self-importance"
                                             -- My mom, probably
+
 .. toctree::
     :maxdepth: 2
 
@@ -36,8 +37,10 @@ To get started with Histoptimizer, install the latest stable release via `pip <h
 
     pip install histoptimizer
 
-Histoptimizer currently supports Python 3.8+ and relies on the following dependencies:
+Histoptimizer currently supports Python 3.8+ and relies on the following fine
+software projects:
 
+- `numpy <https://numpy.org/>`_
 - `pandas <https://pandas.pydata.org/>`_
 - `numba <https://numba.pydata.org>`_
 - `click <https://click.palletsprojects.com/>`_
@@ -70,4 +73,14 @@ There may be practical applications; if so, please don't tell me. There's a
 certain platonic purity to it right now. Freeing, if you think about it. It does
 nothing of value, but does it very quickly, so it makes it up in volume.
 
+================
+About the Author
+================
 
+.. image:: _static/histoptimizer-spirit-animal.png
+    :width: 50%
+    :alt: The LOLRus, Histoptimizer's spirit animal.
+    :align: center
+
+The author loves buckets and owns a variety of them, even one of those Yeti ones,
+and makes no apologies for it.

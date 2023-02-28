@@ -85,6 +85,9 @@ def cuda_partition_kernel(min_cost, divider_location, prefix_sum, num_items,
 
 
 class CUDAOptimizerItemPairs(CUDAOptimizer):
+    """Obsolete version of the CUDA Optimizer, kept around for a tutorial I am
+    working on.
+    """
     name = 'cuda_2'
 
     @classmethod
@@ -93,18 +96,7 @@ class CUDAOptimizerItemPairs(CUDAOptimizer):
 
     @classmethod
     def partition(cls, items, num_buckets, debug_info=None):
-        """
-        Highly parallel GPU-based implementation of Skiena's dynamic programming algorithm for the linear partition problem.
-
-        Arguments:
-            items: An ordered list of items sizes.
-            num_buckets: The number of buckets to partition the items into.
-            debug_info: A dictionary that can accept debug information.
-
-        Returns:
-            partition_locations: Index of dividers within items. Dividers come after the item in 0-based indexing and
-            before the item in 1-based indexing.
-            min_variance: The variance of the solution defined by partition_locations
+        """GPU-based implementation of Skiena's dynamic programming algorithm for the linear partition problem.
         """
 
         # Record the state of then disable the Cuda low occupancy warning.
@@ -132,7 +124,7 @@ class CUDAOptimizerItemPairs(CUDAOptimizer):
         item_cost_gpu = cuda.to_device(item_cost)
         min_cost_gpu = cuda.device_array((len(items), num_buckets + 1))
         divider_location_gpu = cuda.device_array(
-            (len(items), num_buckets + 1), dtype=np.int)
+            (len(items), num_buckets + 1), dtype=int)
 
         threads_per_block = 1024
         num_blocks = math.ceil((len(items) / 2) / threads_per_block)
