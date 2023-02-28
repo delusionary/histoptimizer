@@ -7,7 +7,78 @@ CLI Guide
 histoptimizer
 =============
 
-Histoptimizer would be the main CLI if it did anything useful.
+Histoptimizer takes a CSV and partitions it evenly into a supplied number of
+buckets by adding columns where each item is assigned to a bucket.
+
+Usage
+-----
+
+.. program-output:: histoptimizer --help
+
+
+Examples
+--------
+
+Consider the following CSV:
+
+.. csv-table:: books.csv
+   :file: books.csv
+   :widths: 80, 20
+   :header-rows: 1
+
+To sort by title, and then divide optimally into 3, 5, 6, and 7 buckets,
+use this command:
+
+``histoptimizer -s Title books.csv Pages 3,5-7``
+
+Returns:
+
++----+--------------------------------+---------+---------------+---------------+---------------+---------------+
+|    | Title                          |   Pages |   partition_3 |   partition_5 |   partition_6 |   partition_7 |
++====+================================+=========+===============+===============+===============+===============+
+|  0 | Clean Code                     |     464 |             1 |             1 |             1 |             1 |
++----+--------------------------------+---------+---------------+---------------+---------------+---------------+
+|  1 | Code Complete                  |     960 |             1 |             1 |             1 |             1 |
++----+--------------------------------+---------+---------------+---------------+---------------+---------------+
+|  2 | Consciousness Explained        |     528 |             1 |             1 |             2 |             2 |
++----+--------------------------------+---------+---------------+---------------+---------------+---------------+
+|  3 | Consider Phlebas               |     544 |             1 |             2 |             2 |             2 |
++----+--------------------------------+---------+---------------+---------------+---------------+---------------+
+|  4 | Hands-on Machine Learning      |     850 |             2 |             2 |             3 |             3 |
++----+--------------------------------+---------+---------------+---------------+---------------+---------------+
+|  5 | I Heart Logs                   |      60 |             2 |             2 |             3 |             3 |
++----+--------------------------------+---------+---------------+---------------+---------------+---------------+
+|  6 | I am a Strange Loop            |     432 |             2 |             2 |             3 |             3 |
++----+--------------------------------+---------+---------------+---------------+---------------+---------------+
+|  7 | Kraken                         |     528 |             2 |             3 |             4 |             4 |
++----+--------------------------------+---------+---------------+---------------+---------------+---------------+
+|  8 | Noise                          |     464 |             2 |             3 |             4 |             4 |
++----+--------------------------------+---------+---------------+---------------+---------------+---------------+
+|  9 | Site Reliability Engineering   |     550 |             2 |             3 |             4 |             5 |
++----+--------------------------------+---------+---------------+---------------+---------------+---------------+
+| 10 | Snow Crash                     |     440 |             3 |             4 |             5 |             5 |
++----+--------------------------------+---------+---------------+---------------+---------------+---------------+
+| 11 | Software Engineering at Google |     599 |             3 |             4 |             5 |             6 |
++----+--------------------------------+---------+---------------+---------------+---------------+---------------+
+| 12 | The Algorithm Design Manual    |     748 |             3 |             4 |             5 |             6 |
++----+--------------------------------+---------+---------------+---------------+---------------+---------------+
+| 13 | The Fractal Geometry of Nature |     500 |             3 |             5 |             6 |             7 |
++----+--------------------------------+---------+---------------+---------------+---------------+---------------+
+| 14 | The Information                |     544 |             3 |             5 |             6 |             7 |
++----+--------------------------------+---------+---------------+---------------+---------------+---------------+
+| 15 | Web Operations                 |     338 |             3 |             5 |             6 |             7 |
++----+--------------------------------+---------+---------------+---------------+---------------+---------------+
+
+
+=============
+histobench
+=============
+
+``histobench`` is a CLI that lets you unlock Histoptimizer's most powerful
+abilities: running against random data and then throwing away the results.
+
+If you supply it with specifications of multiple item sizes and multiple
+buckets, it will benchmark every possible combination of item size and buckets.
 
 Set Expressions
 ---------------
@@ -31,37 +102,6 @@ Some examples:
 
 ``10-25:8`` → ``(10, 18)``
 
-Usage
------
-
-.. program-output:: histoptimizer --help
-
-Examples
---------
-
-Consider the following CSV:
-
-.. csv-table:: books.csv
-   :file: books.csv
-   :widths: 80, 20
-   :header-rows: 1
-
-To sort by title, and then divide optimally into 3, 5, 6, and 7 buckets,
-use this command:
-
-.. program-output:: histoptimizer -i Title -s Title books.csv Pages 3,5-7
-   :caption: histoptimizer -i Title -s Title books.csv Pages 3,5-7
-
-
-=============
-histobench
-=============
-
-``histobench`` is a CLI that lets you unlock Histoptimizer's most powerful
-abilities: running against random data and then throwing away the results.
-
-If you supply it with specifications of multiple item sizes and multiple
-buckets, it will benchmark every possible combination of item size and buckets.
 
 Usage
 -----

@@ -12,10 +12,10 @@ Histoptimizer
     API Reference <api>
     CLI Guide <cli>
 
-Histoptimizer is a Python library that solves a very specific problem: Given an
-ordered list of item sizes, and a number of partitions **n**, it returns a list of
-divider locations that partition the given list into **n** partitions with the
-lowest possible variance across the sums of the items in each partition.
+Histoptimizer takes an ordered list of item sizes and a number of partitions *k*,
+and returns a list of divider locations that partition the given list into *k*
+partitions with the lowest possible variance across the sums of the items in
+each partition.
 
 Histoptimizer provides JIT- and SIMD-accelerated implementations on Intel and
 AMD processors, and a CUDA implementation for NVidia graphics cards. The

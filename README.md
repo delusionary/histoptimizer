@@ -10,15 +10,12 @@ the items as evenly as possible into a given number of buckets, minimizing the
 variance and standard deviation between the bucket sizes.
 
 JIT compilation and GPU support through Numba provide great speed improvements
-on supported hardware.
+on supported hardware, enabling problem sets of a million items or more.
 
-The problem that motivated its creation was: given a list of the ~3117
-counties in the U.S., ordered  by some attribute (voting averages,
-population density, median age, etc.), distribute them into a number
-of buckets of approximately equal population, as evenly as possible.
-
-That job being done, it is of questionable further use. It is fun to work on,
-though. So.
+Histoptimizer was built in order to divide the counties of the US precisely
+into intervals ordered by population density. That job was accomplished very
+early on, and no other uses have been discovered. It is unclear why development
+has continued to this point.
 
 ## Usage
 
@@ -32,6 +29,17 @@ array of divider locations (dividers come _after_ the given item in 1-based
 indexing, or _before_ the given item in 0-based indexing) and the variance of
 the given partition.
 
+```python
+from histoptimizer import Histoptimizer
+
+item_sizes = [1.0, 4.5, 6.3, 2.1, 8.4, 3.7, 8.6, 0.3, 5.2, 6.9, 1.2, 2.4, 9.8, 3.7]
+
+# Get the optimal position of two dividers that partition the list above into 3 buckets.
+(dividers, variance) = Histoptimizer.partition(item_sizes, 3)
+
+print(f"Optimal Divider Locations: {dividers} Optimal solution variance: {variance:.4}")
+```
+
 ### Pandas Dataframe Partitioner
 
 You can supply a Pandas DataFrame, the name of a size column, a list of bucket
@@ -39,50 +47,81 @@ sizes, and a column prefix to get a version of the DataFrame with added columns
 where the value is the 1-based bucket number of the corresponding item 
 partitioned into the number of buckets reflected in the column name.
 
+```python
+from histoptimizer import histoptimize
+import pandas as pd
+
+books = pd.read_csv('books.csv', header=0)
+divisions, column_names = histoptimize(books, "Pages", [3], "assistant_", Histoptimizer)
+divisions
+```
+
+|     | Title                          |   Pages | assistant_3 |
+|----:|:-------------------------------|--------:|------------:|
+|   0 | The Algorithm Design Manual    |     748 |           1 |
+|   1 | Software Engineering at Google |     599 |           1 |
+|   2 | Site Reliability Engineering   |     550 |           2 |
+|  .. | ...                            |   ...   |         ... |
+|  14 | Noise                          |     464 |           3 |
+|  15 | Snow Crash                     |     440 |           3 |
+
+
 ### CLI
 
 The CLI is a wrapper around the DataFrame functionality that can accept and
 produce either CSV or Pandas JSON files.
 
 ```
-Usage: histoptimizer [OPTIONS] FILE ID_COLUMN SIZE_COLUMN PARTITIONS
+Usage: histoptimizer [OPTIONS] FILE SIZE_COLUMN PARTITIONS
 
-  Given a CSV, a row name column, a size column, sort key, and a number of
-  buckets, optionally sort the CSV by the given key, then distribute the
-  ordered keys as evenly as possible to the given number of buckets.
+  Partition ordered items in a CSV into a given number of buckets,       
+  evenly.
+
+  Given a CSV or JSON Dataframe, a size column name, and a number of     
+  buckets, Histoptimizer will add a column which gives the partition     
+  number for each row that optimally divides the given items into the    
+  buckets so as to minimize the variance from mean of the summed items   
+  in each bucket.
+
+  Additional features allow doing a list of bucket sizes in one go,      
+  sorting items beforehand, and producing output with only relevant      
+  columns.
 
   Example:
 
-      > histoptimizer states.csv state_name population 10
+      > histoptimizer books.csv state_name population 10
 
       Output:
 
-      state_name, population, partition_10     Wyoming, xxxxxx, 1
+      state_name, population, partition_10     Wyoming, xxxxxx, 1        
       California, xxxxxxxx, 10
 
 Options:
-  -l, --limit INTEGER             Take the first {limit} records from the
-                                  input, rather than the whole file.
+  -l, --limit INTEGER             Take the first {limit} records from    
+                                  the input, rather than the whole       
+                                  file.
   -a, --ascending, --asc / -d, --descending, --desc
                                   If a sort column is provided,
   --print-all, --all / --no-print-all, --brief
-                                  Output all columns in input, or with
-                                  --brief, only output the ID, size, and
-                                  buckets columns.
-  -c, --column-prefix TEXT        Partition column name prefix. The number of
-                                  buckets will be appended. Defaults to
-                                  partion_{number of buckets}.
-  -s, --sort-key TEXT             Optionally sort records by this column name
-                                  before partitioning.
-  -t, --timing / --no-timing      Print partitioner timing information to
-                                  stderr
-  -i, --implementation TEXT       Use the named partitioner implementation.
-                                  Defaults to "dynamic_numba". If you have an
-                                  NVidia GPU use "cuda" for better performance
-  -o, --output FILENAME           Send output to the given file. Defaults to
-                                  stdout.
-  -f, --output-format [csv|json]  Specify output format. Pandas JSON or CSV.
-                                  Defaults to CSV
+                                  Output all columns in input, or with   
+                                  --brief, only output the ID, size,     
+                                  and buckets columns.
+  -c, --column-prefix TEXT        Partition column name prefix. The      
+                                  number of buckets will be appended.    
+                                  Defaults to partion_{number of
+                                  buckets}.
+  -s, --sort-key TEXT             Optionally sort records by this        
+                                  column name before partitioning.       
+  -i, --id-column TEXT            Optional ID column to print with       
+                                  brief output.
+  -p, --partitioner TEXT          Use the named partitioner
+                                  implementation. Defaults to "numba".   
+                                  If you have an NVidia GPU use "cuda"   
+                                  for better performance
+  -o, --output FILENAME           Send output to the given file.
+                                  Defaults to stdout.
+  -f, --output-format [csv|json]  Specify output format. Pandas JSON or  
+                                  CSV. Defaults to CSV
   --help                          Show this message and exit.
 ```
 
@@ -118,8 +157,3 @@ Options:
   --help                          Show this message and exit.
 ```
 
-## JIT SIMD Compilation and CUDA acceleration
-
-Histoptimizer supports Just-in-time compilation for both CPU and NVidia CUDA
-GPUs using Numba. For larger problems these implementations can be hundreds or
-thousands of times faster than the pure Python implementation.
